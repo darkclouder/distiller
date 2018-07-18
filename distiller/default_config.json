@@ -1,0 +1,36 @@
+{
+  "distiller": {
+    "pidfile": "daemon.pid",
+    "socket": {
+      "ip": "127.0.0.1",
+      "port": 13338
+    }
+  },
+  "log": {
+    "module": "distiller.core.impl.FileLog",
+    "dir": "/tmp/distiller/log/",
+    "verbose_level": "NOTICE",
+    "log_level": "WARNING",
+    "exit_level": "CRITICAL"
+  },
+  "scheduler": {
+    "module": "distiller.core.impl.SimpleScheduler.SimpleScheduler"
+  },
+  "meta": {
+    "module": "distiller.core.impl.SQLiteMeta",
+    "file_path": "meta.db"
+  },
+  "watchdog": {
+    "timeout": 20
+  },
+  "spirits": {
+    "default_driver": {
+      "module": "distiller.drivers.CsvFileDriver",
+      "params": {
+        "dict": false
+      }
+    }
+  },
+  "drivers": {
+  }
+}

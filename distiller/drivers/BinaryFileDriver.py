@@ -1,0 +1,130 @@
+import os
+import shutil
+
+from distiller.api.DataDriver import DataDriver
+from distiller.api.Reader import Reader, ReadIterator
+from distiller.api.Writer import Writer, WriteModes, WriteAfterCommitException
+from distiller.utils.PathFinder import PathFinder
+
+
+class BinaryFileDriver(DataDriver):
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    def read(self, spirit, config):
+        task_path = PathFinder.get_data_path(spirit.name())
+        parameter_id = spirit.label()
+
+        data_path = os.path.join(task_path, parameter_id)
+
+        return FileReader(data_path, **self.kwargs)
+
+    def write(self, spirit, config):
+        task_path = PathFinder.get_data_path(spirit.name())
+        parameter_id = spirit.label()
+
+        data_path = os.path.join(task_path, parameter_id)
+
+        if not os.path.exists(task_path):
+            os.makedirs(task_path)
+
+        return BinaryWriteModes(data_path, **self.kwargs)
+
+
+class FileReader(Reader):
+    def __init__(self, file_path, **kwargs):
+        self.file_path = file_path
+        self.kwargs = kwargs
+
+    def blob(self):
+        return BlobIterator(
+            self.file_path,
+            mode="r" + ("b" if self.kwargs.get("binary", False) else ""),
+            **self.kwargs
+        )
+
+    def it(self):
+        return self.blob()
+
+
+class BlobIterator(ReadIterator):
+    def __init__(self, file_path, chunk_size=1024, mode="rb", **kwargs):
+        self.file_path = file_path
+        self.chunk_size = chunk_size
+        self.file = None
+        self.kwargs = kwargs
+        self.mode = mode
+
+    def __enter__(self):
+        self.file = open(self.file_path, self.mode)
+
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if self.file is not None and not self.file.closed:
+            self.file.close()
+
+    def __iter__(self):
+        if self.file is None:
+            raise RuntimeError("BlobIterator must be entered with with-statement before usage")
+
+        while True:
+            chunk = self.file.read(self.chunk_size)
+
+            if chunk:
+                yield chunk
+            else:
+                break
+
+
+class FileWriter(Writer):
+    def __init__(self, file_path, mode, **kwargs):
+        self.file_path = file_path
+        self.kwargs = kwargs
+        self.commited = False
+        self.mode = mode + ("b" if self.kwargs.get("binary", False) else "")
+
+    def write(self, data):
+        """Write a relational entry, or an entire blob"""
+
+        if self.commited:
+            raise WriteAfterCommitException
+
+        self.file.write(data)
+
+    def commit(self):
+        """Commits the change. Write operations after this lead to an error"""
+
+        if self.commited:
+            raise WriteAfterCommitException
+
+        self.commited = True
+        self.file.close()
+        self.file = None
+
+        shutil.move(self.file_path + "~", self.file_path)
+
+    def __enter__(self):
+        self.file = open(self.file_path + "~", self.mode, **self.kwargs.get("file_params", {}))
+
+        return self
+
+    def __exit__(self, type, value, traceback):
+        """If exit appears without a commit, undo all changes"""
+
+        if not self.commited:
+            self.file.close()
+            os.remove(self.file_path + "~")
+            self.file = None
+
+
+class BinaryWriteModes(WriteModes):
+    def __init__(self, file_path, **kwargs):
+        self.kwargs = kwargs
+        self.file_path = file_path
+
+    def replace(self):
+        return FileWriter(self.file_path, "w", **self.kwargs)
+
+    def append(self):
+        return FileWriter(self.file_path, "a", **self.kwargs)
