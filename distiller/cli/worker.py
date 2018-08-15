@@ -8,13 +8,13 @@ def get_action(conf, program):
     worker_parser.add_argument("--start", required=True, action='store_const', const=True)
     worker_parser.add_argument(
         "--host",
-        default=conf.get("distiller.socket.ip"),
-        help="Host of core daemon, DEFAULT: %s (see config)" % conf.get("distiller.socket.ip")
+        default=conf.get("remote.default.ip"),
+        help="Host of core daemon, DEFAULT: %s (see config)" % conf.get("remote.default.ip")
     )
     worker_parser.add_argument(
         "--port",
-        default=conf.get("distiller.socket.port"),
-        help="Port of core daemon, DEFAULT: %s (see config)" % conf.get("distiller.socket.port")
+        default=conf.get("remote.default.port"),
+        help="Port of core daemon, DEFAULT: %s (see config)" % conf.get("remote.default.port")
     )
 
     def worker(args):

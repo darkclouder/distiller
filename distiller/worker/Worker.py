@@ -18,7 +18,7 @@ class Worker:
         self.remote = Remote(host, port)
 
         # Load default driver
-        self.config = Configuration.load()
+        self.config = Configuration.load("worker")
 
         driver_module = importlib.import_module(self.config.get("spirits.default_driver.module"))
         self.default_driver = driver_module.module_class(**self.config.get("spirits.default_driver.params"))
@@ -69,9 +69,14 @@ class Worker:
         try:
             spirit = TaskLoader.init(job["spirit_id"], task_root=self.task_dir)
         except TaskLoadError:
-            self.__finish_job(job, FinishState.LOAD_ERROR, message=traceback.format_exc())
+            trace = traceback.format_exc()
+            print("Could not load job %s" % job)
+            print(trace)
+            self.__finish_job(job, FinishState.LOAD_ERROR, message=trace)
         except Exception:
-            self.__finish_job(job, FinishState.WORKER_ERROR, message=traceback.format_exc())
+            trace = traceback.format_exc()
+            print("Aborted job %s with error %s" % (job, trace))
+            self.__finish_job(job, FinishState.WORKER_ERROR, message=trace)
         else:
             # Run spirit with runner, and send different finish states
             # depending on if there was an execution error, unit test error, abort, or success
@@ -84,7 +89,9 @@ class Worker:
                 else:
                     writer = spirit.stored_in().write(spirit, self.config)
             except Exception:
-                self.__finish_job(job, FinishState.LOAD_ERROR, message=traceback.format_exc())
+                trace = traceback.format_exc()
+                print("Aborted spirit %s with error %s" % (spirit, trace))
+                self.__finish_job(job, FinishState.LOAD_ERROR, message=trace)
             else:
                 do_heartbeat = True
 
@@ -109,7 +116,9 @@ class Worker:
                         writer
                     )
                 except Exception:
-                    self.__finish_job(job, FinishState.EXEC_ERROR, message=traceback.format_exc())
+                    trace = traceback.format_exc()
+                    print("Aborted spirit %s with error %s" % (spirit, trace))
+                    self.__finish_job(job, FinishState.EXEC_ERROR, message=trace)
                 else:
                     print("Completed spirit %s" % spirit)
                     self.__finish_job(job, FinishState.SUCCESS)

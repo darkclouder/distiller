@@ -1,8 +1,9 @@
 import re
 
+
 class RequestHandler:
     def __init__(self):
-        self.routes = { "get": [], "post": [] }
+        self.routes = {"get": [], "post": []}
 
     def get(self, route, func):
         self.routes["get"].append((re.compile(route), func))

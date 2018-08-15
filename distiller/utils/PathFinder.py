@@ -2,9 +2,18 @@ import os
 
 
 class PathFinder:
-    conf_env = "DISTILLER_CONF_FILE"
+    conf_env = "DISTILLER_CONF_PATH"
     task_env = "DISTILLER_TASK_PATH"
     data_env = "DISTILLER_DATA_PATH"
+
+    data_pattern = "!:d/"
+
+    @classmethod
+    def expand_path(cls, path):
+        if path.startswith(cls.data_pattern):
+            path = os.path.join(cls.get_data_root(), path[len(cls.data_pattern):])
+
+        return path
 
     @classmethod
     def get_src_root(cls):
@@ -14,20 +23,24 @@ class PathFinder:
         ))
 
     @classmethod
-    def get_default_config(cls):
-        return os.path.realpath(os.path.join(cls.get_src_root(), "default_config.json"))
+    def get_default_config(cls, mode):
+        return os.path.realpath(os.path.join(
+            cls.get_src_root(),
+            "default_config",
+            "%s.json" % mode
+        ))
 
     @classmethod
     def get_config(cls):
         if cls.conf_env in os.environ:
-            return os.environ[cls.conf_env]
+            return cls.expand_path(os.environ[cls.conf_env])
 
         return None
 
     @classmethod
     def get_task_root(cls):
         if cls.task_env in os.environ:
-            return os.environ[cls.task_env]
+            return cls.expand_path(os.environ[cls.task_env])
 
         return os.path.join(cls.get_src_root(), "tasks")
 
@@ -44,7 +57,7 @@ class PathFinder:
     @classmethod
     def get_data_root(cls):
         if cls.data_env in os.environ:
-            return os.environ[cls.data_env]
+            return cls.expand_path(os.environ[cls.data_env])
 
         return "data"
 

@@ -1,8 +1,8 @@
 import os
 
-from .impl.SimpleScheduler import SimpleScheduler
-from .impl.HttpServer import HttpServer
-from .impl.CoreHandler import CoreHandler
+from distiller.core.impl.SimpleScheduler import SimpleScheduler
+from distiller.core.impl.HttpServer import HttpServer
+from distiller.core.impl.CoreHandler import CoreHandler
 
 
 class Distiller:
@@ -12,19 +12,18 @@ class Distiller:
         self.shutdown = False
 
         self.srv = HttpServer(CoreHandler(), self.env)
+        self.pidfile = self.env.config.get("distiller.pidfile", path=True)
 
     def is_running(self):
-        pidfile = self.env.config.get("distiller.pidfile")
-
         # Check if pid file already exists
         # and if the pid is still running
-        if os.path.isfile(pidfile):
-            with open(pidfile, "r") as f:
+        if os.path.isfile(self.pidfile):
+            with open(self.pidfile, "r") as f:
                 try:
                     pid = int(f.readline())
                 except ValueError:
                     self.logger.warning("Corrupt pid file")
-                    os.remove(pidfile)
+                    os.remove(self.pidfile)
                     return False
 
                 # Check if process still running
@@ -32,7 +31,7 @@ class Distiller:
                     os.kill(pid, 0)
                 except OSError:
                     self.logger.notice("Deamon not running, but pid file exists")
-                    os.remove(pidfile)
+                    os.remove(self.pidfile)
                     return False
                 else:
                     return True
@@ -43,10 +42,9 @@ class Distiller:
         self.logger.notice("Daemon start-up")
 
         # Write pid to pidfile
-        pidfile = self.env.config.get("distiller.pidfile")
         pid = str(os.getpid())
 
-        with open(pidfile, "w") as f:
+        with open(self.pidfile, "w") as f:
             f.write(pid)
 
         # Start watchdog (non-blocking)
@@ -56,8 +54,6 @@ class Distiller:
         self.srv.run()
 
     def stop(self):
-        pidfile = self.env.config.get("distiller.pidfile")
-
         self.logger.notice("Daemon shutdown initiated")
 
         # Stop web server
@@ -66,6 +62,6 @@ class Distiller:
         # Stop watchdog (non-blocking)
         self.env.watchdog.stop()
 
-        os.remove(pidfile)
+        os.remove(self.pidfile)
 
         self.logger.notice("Daemon shutdown done")

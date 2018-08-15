@@ -12,13 +12,13 @@ def get_action(conf, program):
     )
     spirit_parser.add_argument(
         "--host",
-        default=conf.get("distiller.socket.ip"),
-        help="Host of core daemon, DEFAULT: %s (see config)" % conf.get("distiller.socket.ip")
+        default=conf.get("remote.default.ip"),
+        help="Host of core daemon, DEFAULT: %s (see config)" % conf.get("remote.default.ip")
     )
     spirit_parser.add_argument(
         "--port",
-        default=conf.get("distiller.socket.port"),
-        help="Port of core daemon, DEFAULT: %s (see config)" % conf.get("distiller.socket.port")
+        default=conf.get("remote.default.port"),
+        help="Port of core daemon, DEFAULT: %s (see config)" % conf.get("remote.default.port")
     )
     # Spirit settings
     spirit_parser.add_argument(
@@ -35,14 +35,25 @@ def get_action(conf, program):
         default="{}",
         help="Scheduling options"
     )
+    spirit_parser.add_argument(
+        "--ar",
+        default=None,
+        type=int,
+        help="Age requirement (scheduling option shortcut, does not override -o)"
+    )
 
     def spirit(args):
         remote = Remote(args.host, args.port)
 
+        options = json.loads(args.o)
+
+        if "age_requirement" not in options:
+            options["age_requirement"] = args.ar
+
         if args.action == "add":
-            remote.add_target((args.still_id, json.loads(args.p)), options=json.loads(args.o))
+            remote.add_target((args.still_id, json.loads(args.p)), options=options)
         elif args.action == "remove":
-            remote.remove_target((args.still_id, json.loads(args.p)), options=json.loads(args.o))
+            remote.remove_target((args.still_id, json.loads(args.p)), options=options)
         else:
             print("Invalid action")
             spirit_parser.print_help()

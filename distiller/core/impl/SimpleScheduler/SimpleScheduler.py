@@ -36,11 +36,11 @@ class SimpleScheduler(Scheduler):
 
             # Get next (active) task to execute (depending on dependencies, priorities, etc)
             next_transaction = self.graph.run_next()
-        
+
         if next_transaction is not None:
             self.logger.notice(
                 "Start execution of %s (transaction id %i)" % (
-                    spirit_id_to_label(*next_transaction["spirit_id"]), next_transaction["transaction_id"] 
+                    spirit_id_to_label(*next_transaction["spirit_id"]), next_transaction["transaction_id"]
                 )
             )
 
@@ -97,8 +97,8 @@ class SimpleScheduler(Scheduler):
 
         with self.lock:
             self.backlog.add(schedule_info, persistent=options.get("persistent", False))
-        
-        self.logger.notice("Add %s to scheduler" % spirit_id_to_label(*target_spirit_id))
+
+        self.logger.notice("Add %s to scheduler with options %s" % (spirit_id_to_label(*target_spirit_id), options))
 
     def remove_target(self, target_spirit_id, persistent=False):
         with self.lock:

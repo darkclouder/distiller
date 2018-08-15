@@ -1,10 +1,9 @@
 from distiller.api.DataDriver import DataDriver
 from distiller.api.Reader import Reader, ReadIterator
 from distiller.api.Writer import Writer, WriteModes, WriteAfterCommitException
-from distiller.drivers.RowToBlobIterator import RowToBlobIterator
+from distiller.drivers.internal.RowToBlobIterator import RowToBlobIterator
 
 from pymongo import MongoClient
-
 
 
 class MongoDriver(DataDriver):
@@ -26,11 +25,12 @@ class MongoDriver(DataDriver):
     def __collection(self, spirit):
         return self.kwargs.get("collection_prefix", "") + spirit.label()
 
+
 class MongoReader(Reader):
     def __init__(self, collection, credentials):
         self.collection = collection
         self.credentials = credentials
-    
+
     def blob(self):
         return RowToBlobIterator(self.it())
 
@@ -90,7 +90,7 @@ class MongoWriter(Writer):
 
         if key is None and mode == "update":
             raise ValueError("Key cannot be None in update mode")
-    
+
     def write(self, data):
         """Write a relational entry, or an entire blob"""
 
@@ -100,10 +100,10 @@ class MongoWriter(Writer):
             raise WriteAfterCommitException
 
         if self.mode == "update":
-            self.write_coll.replace_one({ self.key: data[self.key] }, data, True)
+            self.write_coll.replace_one({self.key: data[self.key]}, data, True)
         else:
             self.write_coll.insert_one(data)
-    
+
     def commit(self):
         """Commits the change. Write operations after this lead to an error"""
 
@@ -111,14 +111,14 @@ class MongoWriter(Writer):
             raise WriteAfterCommitException
 
         self.commited = True
-        
+
         self.client[self.credentials["database"]][self.collection].drop()
         self.write_coll.rename(self.collection)
 
         self.client.close()
         self.client = None
         self.write_coll = None
-    
+
     def __enter__(self):
         self.client = MongoClient(self.credentials["uri"])
 

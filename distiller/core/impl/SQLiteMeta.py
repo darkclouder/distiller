@@ -17,6 +17,8 @@ class SQLiteMeta(Meta):
         self.env = env
         self.logger = self.env.logger.claim("Core")
 
+        self.db_path = self.env.config.get("meta.file_path", path=True)
+
         self.__try_create_db()
 
         with self.__connect_db():
@@ -24,14 +26,13 @@ class SQLiteMeta(Meta):
 
     def __connect_db(self):
         data_root = PathFinder.get_data_root()
-        db_path = os.path.join(data_root, self.env.config.get("meta.file_path"))
 
         try:
             if not os.path.exists(data_root):
                 os.makedirs(data_root)
 
             db = sqlite3.connect(
-                db_path,
+                self.db_path,
                 detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
             )
  
@@ -41,10 +42,11 @@ class SQLiteMeta(Meta):
             return
 
     def __try_create_db(self):
+        # Is database set to volatile?
+        # Volatile: with each restart the meta data is reset
         if self.env.config.get("meta.volatile"):
-            db_path = os.path.join(PathFinder.get_data_root(), self.env.config.get("meta.file_path"))
-            if os.path.exists(db_path):
-                os.remove(db_path)
+            if os.path.exists(self.db_path):
+                os.remove(self.db_path)
 
         with self.__connect_db() as conn:
             queries = [

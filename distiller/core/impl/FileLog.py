@@ -8,7 +8,7 @@ class FileLog(Log):
     def __init__(self, env):
         self.env = env
 
-        log_dir = self.env.config.get("log.dir")
+        log_dir = self.env.config.get("log.dir_path", path=True)
 
         self.file_path = os.path.join(log_dir, "%s.log" % datetime.now().__str__())
         self.file = None

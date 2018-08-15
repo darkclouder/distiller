@@ -1,0 +1,18 @@
+{
+    "watchdog": {
+        "timeout": 20
+    },
+    "spirits": {
+        "default_driver": {
+            "module": "distiller.drivers.CsvFileDriver",
+            "params": {
+                "dict": false
+            }
+        }
+    },
+    "drivers": {
+        "FileDriver": {
+            "cask_path": "!:d/casks"
+        }
+    }
+}

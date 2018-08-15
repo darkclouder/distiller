@@ -1,32 +1,20 @@
 import os
 import shutil
 
-from distiller.api.DataDriver import DataDriver
 from distiller.api.Reader import Reader, ReadIterator
 from distiller.api.Writer import Writer, WriteModes, WriteAfterCommitException
-from distiller.utils.PathFinder import PathFinder
+from distiller.drivers.internal.FileDriver import FileDriver, get_temp_path
 
 
-class BinaryFileDriver(DataDriver):
+class BinaryFileDriver(FileDriver):
     def __init__(self, **kwargs):
         self.kwargs = kwargs
 
     def read(self, spirit, config):
-        task_path = PathFinder.get_data_path(spirit.name())
-        parameter_id = spirit.label()
-
-        data_path = os.path.join(task_path, parameter_id)
-
-        return FileReader(data_path, **self.kwargs)
+        return FileReader(self._get_data_path(spirit, config), **self.kwargs)
 
     def write(self, spirit, config):
-        task_path = PathFinder.get_data_path(spirit.name())
-        parameter_id = spirit.label()
-
-        data_path = os.path.join(task_path, parameter_id)
-
-        if not os.path.exists(task_path):
-            os.makedirs(task_path)
+        data_path = self._get_data_path(spirit, config, create_path=True)
 
         return BinaryWriteModes(data_path, **self.kwargs)
 
@@ -102,10 +90,10 @@ class FileWriter(Writer):
         self.file.close()
         self.file = None
 
-        shutil.move(self.file_path + "~", self.file_path)
+        shutil.move(get_temp_path(self.file_path), self.file_path)
 
     def __enter__(self):
-        self.file = open(self.file_path + "~", self.mode, **self.kwargs.get("file_params", {}))
+        self.file = open(get_temp_path(self.file_path), self.mode, **self.kwargs.get("file_params", {}))
 
         return self
 
@@ -114,7 +102,7 @@ class FileWriter(Writer):
 
         if not self.commited:
             self.file.close()
-            os.remove(self.file_path + "~")
+            os.remove(get_temp_path(self.file_path))
             self.file = None
 
 

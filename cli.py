@@ -21,13 +21,14 @@ def global_help(context):
 
 
 def main():
-    conf = Configuration.load()
+    worker_conf = Configuration.load("worker")
+    daemon_conf = Configuration.load("daemon")
 
     program = sys.argv[0]
     actions = {
-        "worker": util_worker.get_action(conf, program),
-        "spirit": util_spirit.get_action(conf, program),
-        "daemon": util_daemon.get_action(conf, program),
+        "worker": util_worker.get_action(worker_conf, program),
+        "spirit": util_spirit.get_action(worker_conf, program),
+        "daemon": util_daemon.get_action(daemon_conf, program),
     }
 
     context = {

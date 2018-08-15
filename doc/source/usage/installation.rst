@@ -17,6 +17,7 @@ config does not have any value set.**
 To create an own config you can copy the default config, remove all keys you want to use from the default config
 and alter all values you want to change.
 
+TODO!!!!! DISTILLER_CONF_FILE is not used any more
 The distiller loads the config file located at the position of the environment variable ``DISTILLER_CONF_FILE``, so
 either set this variable to the path of your config file globally or within your virtual environment.
 
