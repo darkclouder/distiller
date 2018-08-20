@@ -1,10 +1,10 @@
 from threading import Lock
 import datetime
 
-from ...interfaces.Scheduler import Scheduler, FinishState
-from .SchedulingGraph import SchedulingGraph
-from .SchedulingBacklog import SchedulingBacklog
-from .SchedulingInfo import SchedulingInfo
+from distiller.core.interfaces.Scheduler import Scheduler, FinishState
+from distiller.core.impl.SimpleScheduler.SchedulingGraph import SchedulingGraph
+from distiller.core.impl.SimpleScheduler.SchedulingBacklog import SchedulingBacklog
+from distiller.core.impl.SimpleScheduler.SchedulingInfo import SchedulingInfo
 
 from distiller.api.AbstractTask import spirit_id_to_label
 
@@ -16,6 +16,8 @@ from distiller.api.AbstractTask import spirit_id_to_label
 
 class SimpleScheduler(Scheduler):
     def __init__(self, env):
+        super().__init__(env)
+
         self.env = env
         self.logger = self.env.logger.claim("Scheduler")
 

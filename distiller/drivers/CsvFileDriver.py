@@ -10,10 +10,10 @@ from distiller.drivers.BinaryFileDriver import BlobIterator
 
 class CsvFileDriver(FileDriver):
     def __init__(self, **kwargs):
-        self.kwargs = kwargs
+        super().__init__(**kwargs)
 
     def read(self, spirit, config):
-        return FileReader(self._get_data_path(spirit, config), **self.kwargs)
+        return  FileReader(self._get_data_path(spirit, config), **self.kwargs)
 
     def write(self, spirit, config):
         data_path = self._get_data_path(spirit, config, create_path=True)
@@ -182,6 +182,11 @@ class UpdateCsvFileWriter(Writer):
             **self.kwargs.get("csv_params", {})
         )
         self.writer.writeheader()
+
+        # TODO FIXME: this doesn't really only update the edited values?!
+        # Only replace those rows that have been updated and remove those where the value has been updated to None
+        # Answer: yes, it does, since it keeps ALL columns. This seems rather useless
+        # How about only store the changes in memory and update rows where needed
 
         for column in self.columns:
             self.writer.writerow(column)

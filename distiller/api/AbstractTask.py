@@ -6,8 +6,10 @@ from distiller.helpers.extend import extend
 def parameter_id(parameters):
     return json.dumps(parameters, sort_keys=True)
 
+
 def spirit_id_to_label(still_id, parameters):
     return "%s(%s)" % (still_id, parameter_id(parameters))
+
 
 class AbstractTask:
     def __init__(self, parameters=None):
@@ -42,7 +44,7 @@ class AbstractTask:
         return hash(self.label())
 
     def __eq__(self, other):
-        return self.__class__ == other.__class__ and self.parameters == other.parameters
+        return self.name() == other.name() and self.parameters == other.parameters
 
     def requires(self):
         """Should return a list of tasks as dependencies, use [] or None for no dependency.

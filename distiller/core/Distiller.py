@@ -1,6 +1,5 @@
 import os
 
-from distiller.core.impl.SimpleScheduler import SimpleScheduler
 from distiller.core.impl.HttpServer import HttpServer
 from distiller.core.impl.CoreHandler import CoreHandler
 

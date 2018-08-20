@@ -45,7 +45,7 @@ class Configuration:
             print(e, file=sys.stderr)
 
         if override is not None:
-            conf.extend(override)
+            extend(conf.conf_dict, override)
 
         return conf
 

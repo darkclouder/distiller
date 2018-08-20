@@ -1,4 +1,5 @@
 import os
+import shutil
 import re
 import base64
 
@@ -39,7 +40,41 @@ class FileDriver(DataDriver):
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-    def discover_casks(self, config):
+    def delete_all_casks(self, config, whitelist=[]):
+        root_path = config.get("drivers.FileDriver.cask_path", path=True)
+
+        # Get the full paths of all whitelisted spirits
+        whitelisted_paths = [self._get_data_path(item, config) for item in whitelist]
+
+        # Get the prefixes of all paths that are whitelisted
+        # Those paths need to be walked to check if there is something to delete
+        # If a subfolder is not whitelisted as a prefix of a cask to keep the whole
+        # folder will be deleted
+        whitelisted_subpaths = set()
+
+        for path in whitelisted_paths:
+            subpath = []
+
+            # FIXME: this might be a hacky way of splitting. Make sure this doesn't give an error
+            for component in path.split(os.sep):
+                subpath.append(component)
+                whitelisted_subpaths.add(os.path.join(*subpath))
+
+        # Recursively walk all whitelisted subpaths and check which ones to delete
+        if os.path.exists(root_path):
+            self._delete_all_but_subpaths(root_path, whitelisted_subpaths)
+
+    def _delete_all_but_subpaths(self, curr_level, subpaths):
+        for file in os.listdir(curr_level):
+            file_path = os.path.join(curr_level, file)
+
+            if file_path in subpaths:
+                if os.path.isdir(file_path):
+                    self._delete_all_but_subpaths(file_path, subpaths)
+            else:
+                shutil.rmtree(file_path)
+
+    def _discover_casks(self, config):
         root_path = config.get("drivers.FileDriver.cask_path", path=True)
 
         if os.path.exists(root_path):
@@ -53,7 +88,7 @@ class FileDriver(DataDriver):
                         casks.append((
                             os.path.join(os.path.join(root, file)),
                             file,
-                            base64.b64decode(match.group(1))
+                            base64.b64decode(match.group(1)).decode("utf-8")
                         ))
 
             return casks

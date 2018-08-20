@@ -8,7 +8,7 @@ from distiller.core.interfaces.Scheduler import FinishState
 
 class TestSimpleScheduler(unittest.TestCase):
     def setUp(self):
-        self.env = Environment(Configuration.load(override={
+        self.env = Environment(Configuration.load("daemon", override={
             "log": {
                 "verbose_level": "DEBUG",
                 "log_level": "never",
@@ -16,7 +16,7 @@ class TestSimpleScheduler(unittest.TestCase):
             },
             "meta": {
                 "module": "distiller.core.impl.SQLiteMeta",
-                "file_path": "unit_tests.db",
+                "file_path": "!:d/unit_tests.db",
                 "volatile": True
             }
         }))
@@ -54,6 +54,7 @@ class TestSimpleScheduler(unittest.TestCase):
     def test_add_after_dependency(self):
         self.scheduler.add_target(self.t1)
         self.scheduler.add_target(self.t2)
+
         self.assertEqual(self.scheduler.time_until_next(), 0)
 
         transaction = self.scheduler.run_next()

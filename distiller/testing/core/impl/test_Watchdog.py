@@ -2,6 +2,7 @@ import unittest
 
 from distiller.core.impl.Watchdog import WatchdogQueue
 
+
 class WatchdogQueueTest(unittest.TestCase):
     def setUp(self):
         self.queue = WatchdogQueue()
@@ -33,3 +34,7 @@ class WatchdogQueueTest(unittest.TestCase):
 
         self.queue.remove(1)
         self.assertEqual(self.queue.keys(), [])
+
+
+if __name__ == "__main__":
+    unittest.main()

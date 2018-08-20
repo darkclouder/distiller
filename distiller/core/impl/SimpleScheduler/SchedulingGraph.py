@@ -185,8 +185,7 @@ class SchedulingGraph:
 
         for branch in self.branches:
             for root in branch.roots:
-                if root.spirit not in self.running_spirits and \
-                   not self.__is_locked(root.spirit):
+                if root.spirit not in self.running_spirits and not self.__is_locked(root.spirit):
                     return root.spirit
 
         return None
@@ -235,7 +234,7 @@ class SchedulingBranch:
 
         assert len(self.spirits) >= len(self.roots)
 
-        new_roots = []
+        new_roots = set()
 
         for root in self.roots:
             if root.spirit == spirit:
@@ -249,11 +248,11 @@ class SchedulingBranch:
                     child.remove_parent(root)
 
                     if len(child.parents) == 0:
-                        new_roots.append(child)
+                        new_roots.add(child)
             else:
-                new_roots.append(root)
+                new_roots.add(root)
 
-        self.roots = new_roots
+        self.roots = list(new_roots)
 
     def is_complete(self):
         assert len(self.spirits) >= len(self.roots)

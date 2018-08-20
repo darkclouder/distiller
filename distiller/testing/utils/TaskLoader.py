@@ -2,6 +2,7 @@ import unittest
 
 from distiller.utils.TaskLoader import TaskLoader, TaskLoadError
 
+
 class TestTaskLoader(unittest.TestCase):
     def setUp(self):
         pass
@@ -26,6 +27,7 @@ class TestTaskLoader(unittest.TestCase):
         ValidSpirit = TaskLoader.load("testing.valid_definition")
         aSpirit = ValidSpirit()
         self.assertTrue(aSpirit.a_test_function())
+
 
 if __name__ == "__main__":
     unittest.main()

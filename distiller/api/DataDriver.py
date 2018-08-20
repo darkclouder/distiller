@@ -34,12 +34,12 @@ class DataDriver:
 
         raise NotImplementedError
 
-    def discover_casks(self, config):
-        """(Optional, but highly recommended)
-        Finds and returns all casks there are by doing an auto-discovery
-        """
+    def delete_all_casks(self, config, whitelist=[]):
+        """Delete all casks visible to a certain driver (even corrupt ones) [except whitelisted ones]
 
-        return []
+        Arguments:
+        whitelist -- List of spirits not to delete, Default: []
+        """
 
 
 class WriteAfterCommitException(Exception):
