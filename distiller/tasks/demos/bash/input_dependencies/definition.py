@@ -10,7 +10,8 @@ class Still(DefaultStill):
     def requires(self):
         return [
             ("demos.bash.hello_world", {}),
-            ("demos.bash.hello_world", {})
+            ("demos.bash.hello_world", {}),
+            ("demos.bash.hello_world", {"id": 1}),
         ]
 
     def executed_by(self):

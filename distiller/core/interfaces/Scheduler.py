@@ -13,7 +13,7 @@ class FinishState(Enum):
 
 class Scheduler:
     def run_next(self):
-        """Attemps to run one spirit that is in queue
+        """Attempts to run one spirit that is in queue
 
         Note: This does not directly run the target but only return it.
         By calling this method the scheduler assumes that target to be running
@@ -69,60 +69,8 @@ class Scheduler:
 
         raise NotImplementedError
 
-
-class Scheduler:
-    def __init__(self, env):
-        pass
-
-    def run_next(self):
-        """Attemps to run one spirit that is in queue
-
-        Note: This does not directly run the target but only return it.
-        By calling this method the scheduler assumes that target to be running
-
-        Returns a target or None if there is none to run
+    def lock(self):
+        """Returns a file context to lock the scheduler for changes to do some external retrievals
         """
-
-        raise NotImplementedError
-
-    def time_until_next(self):
-        """Returns the duration in seconds until the next scheduled (timed) target should be running.
-        Returns None if there is no scheduled target.
-        """
-
-        raise NotImplementedError
-
-    def add_target(self, target_spirit, age_requirement, options={}):
-        """Adds a spirit permanently to the scheduler
-
-        Arguments:
-        target_spirit -- The target spirit that is to be created
-
-        Keyword arguments:
-        age_requirement -- An age requirement in seconds to fulfill
-                            This should be greater than 0, and consinderably greater than the usual execution time to
-                            compute this spirit.
-        options -- Scheduler options to apply for this target.
-        """
-
-        raise NotImplementedError
-
-    def add_target_once(self, target_spirit, age_requirement=0, options={}):
-        """Adds a spirit for only one execution to the scheduler.
-        This is usually done for manual execution.
-
-        Arguments:
-        target_spirit -- The target spirit that is to be created
-
-        Keyword arguments:
-        age_requirement -- An age requirement in seconds to fulfill (useful for delayed execution).
-                            For instant manual execution this should be 0. Default: 0
-        options -- Scheduler options to apply for this target.
-        """
-
-        raise NotImplementedError()
-
-    def remove_target(self, target_spirit):
-        """Remove a target from the scheduler"""
 
         raise NotImplementedError

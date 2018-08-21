@@ -3,6 +3,7 @@ import datetime
 from enum import Enum
 
 from distiller.utils.TaskLoader import TaskLoader
+from distiller.utils.DependencyExplorer import DependencyExplorer
 
 
 class SchedulingGraph:
@@ -37,21 +38,7 @@ class SchedulingGraph:
         # Therefore the complete execution tree is built up first and then from top down
         # All roots are removed that fulfill the age requirements until none fulfills it
 
-        queue = collections.deque()
-        queue.append(SchedulingNode(TaskLoader.init(scheduling_info.spirit_id)))
-
-        roots = []
-
-        while queue:
-            curr = queue.popleft()
-
-            for dep in curr.spirit.requires():
-                parent_node = SchedulingNode(TaskLoader.init(dep))
-                curr.add_parent(parent_node)
-                queue.append(parent_node)
-
-            if len(curr.parents) == 0:
-                roots.append(curr)
+        roots = DependencyExplorer.explore(scheduling_info.spirit_id)
 
         # Remove cached results satisfying age requirements from execution tree
         fixed_roots = []
@@ -261,18 +248,3 @@ class SchedulingBranch:
 
     def contains_spirit(self, spirit):
         return spirit in self.spirits
-
-
-class SchedulingNode:
-    def __init__(self, spirit):
-        self.spirit = spirit
-        self.parents = []
-        self.children = []
-
-    def add_parent(self, parent):
-        self.parents.append(parent)
-        parent.children.append(self)
-
-    def remove_parent(self, parent):
-        self.parents.remove(parent)
-        parent.children.remove(self)

@@ -37,6 +37,9 @@ class AbstractTask:
 
         return spirit_id_to_label(self.name(), self.parameters)
 
+    def spirit_id(self):
+        return self.name(), self.parameters
+
     def __repr__(self):
         return self.label()
 

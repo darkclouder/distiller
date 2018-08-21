@@ -16,13 +16,11 @@ from distiller.api.AbstractTask import spirit_id_to_label
 
 class SimpleScheduler(Scheduler):
     def __init__(self, env):
-        super().__init__(env)
-
         self.env = env
         self.logger = self.env.logger.claim("Scheduler")
 
         # Lock for controlling any scheduler access, since this can come from different threads
-        self.lock = Lock()
+        self._lock = Lock()
 
         # Graph structure for active scheduler (tasks that are waiting for execution/are being executed)
         self.graph = SchedulingGraph(self.env, self.logger)
@@ -31,7 +29,7 @@ class SimpleScheduler(Scheduler):
         self.backlog = SchedulingBacklog(self.env, self.logger)
 
     def run_next(self):
-        with self.lock:
+        with self._lock:
             # Add all targets from backlog that should be executed now to the active scheduled
             for schedule_info in self.backlog.consume_all():
                 self.graph.add_target(schedule_info)
@@ -49,7 +47,7 @@ class SimpleScheduler(Scheduler):
         return next_transaction
 
     def finish_spirit(self, transaction_id, finish_state=FinishState.SUCCESS, message=None):
-        with self.lock:
+        with self._lock:
             # Get spirit object for transaction_id
             spirit = self.graph.get_spirit(transaction_id)
 
@@ -75,7 +73,7 @@ class SimpleScheduler(Scheduler):
                 self.graph.abort_spirit(transaction_id)
 
     def time_until_next(self):
-        with self.lock:
+        with self._lock:
             if self.graph.is_empty():
                 next_exec = self.backlog.next_execution()
 
@@ -97,18 +95,21 @@ class SimpleScheduler(Scheduler):
             end_date=options.get("end_date", None)
         )
 
-        with self.lock:
+        with self._lock:
             self.backlog.add(schedule_info, persistent=options.get("persistent", False))
 
         self.logger.notice("Add %s to scheduler with options %s" % (spirit_id_to_label(*target_spirit_id), options))
 
     def remove_target(self, target_spirit_id, persistent=False):
-        with self.lock:
+        with self._lock:
             self.backlog.remove(target_spirit_id, persistent)
 
     def event_still_updated(self, still):
         # TODO update scheduling graph with new still definition (update dependencies)
         pass
+
+    def lock(self):
+        return self._lock
 
 
 module_class = SimpleScheduler
