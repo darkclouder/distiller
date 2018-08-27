@@ -8,7 +8,10 @@ from .Configuration import Configuration
 
 
 class Environment:
-    def __init__(self, conf=Configuration.load("daemon")):
+    def __init__(self, conf=None):
+        if conf is None:
+            conf = Configuration.load("daemon")
+
         self.config = conf
 
         self.__init_logger()

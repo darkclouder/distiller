@@ -31,9 +31,12 @@ class PathFinder:
         ))
 
     @classmethod
-    def get_config(cls):
+    def get_config(cls, mode):
         if cls.conf_env in os.environ:
-            return cls.expand_path(os.environ[cls.conf_env])
+            return os.path.join(
+                cls.expand_path(os.environ[cls.conf_env]),
+                "%s.json" % mode
+            )
 
         return None
 

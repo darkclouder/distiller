@@ -55,7 +55,7 @@ class Configuration:
 
     @classmethod
     def load_env(cls, mode="global"):
-        env_path = PathFinder.get_config()
+        env_path = PathFinder.get_config(mode)
         if env_path is not None and os.path.isfile(env_path):
             return cls.load_file(env_path)
 
