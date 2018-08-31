@@ -2,7 +2,6 @@ import heapq
 import collections
 import datetime
 
-from .SchedulingInfo import SchedulingInfo
 from distiller.utils.TaskLoader import TaskLoader, TaskLoadError
 
 
@@ -17,6 +16,9 @@ class SchedulingBacklog:
         """Add a scheduling rule to the backlog
         Only for once instance of the daemon if persistent=False
         Or in the meta db if persistent=True"""
+
+        if (persistent or scheduling_info.reoccurring) and scheduling_info.age_requirement == 0:
+            raise ValueError("Reoccurring target cannot have age requirement 0")
 
         if persistent:
             scheduling_info.reoccurring = True
@@ -83,10 +85,13 @@ class SchedulingBacklog:
 
     def __load_persistent(self):
         """Load all persistent scheduling rules from the meta db"""
+        schedule_infos = self.env.meta.get_scheduled_infos()
 
-        schedule_info = self.env.meta.get_scheduled_infos()
+        for si in schedule_infos:
+            if si.age_requirement == 0:
+                self.logger.warning("Reoccurring target %s cannot have age requirement 0" % str(si.spirit_id))
+                continue
 
-        for si in schedule_info:
             try:
                 si.next_exec_date = self.__get_postponed_exec_date(si, datetime.datetime.now())
             except TaskLoadError as e:

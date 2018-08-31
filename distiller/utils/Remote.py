@@ -62,7 +62,10 @@ class Remote:
 
         return obj
 
-    def add_target(self, spirit_id, options={}):
+    def add_target(self, spirit_id, options=None):
+        if options is None:
+            options = {}
+
         url = self.url_prefix + "targets/add"
 
         res = requests.post(url, json.dumps({
@@ -78,7 +81,10 @@ class Remote:
         if obj.get("error", None) is not None:
             raise RemoteError(obj["error"])
 
-    def remove_target(self, spirit_id, options={}):
+    def remove_target(self, spirit_id, options=None):
+        if options is None:
+            options = {}
+
         url = self.url_prefix + "targets/remove"
 
         res = requests.post(url, json.dumps({
@@ -96,6 +102,34 @@ class Remote:
 
     def heartbeat(self, transaction_id):
         url = self.url_prefix + "tasks/heartbeat/%i" % transaction_id
+
+        res = requests.post(url)
+
+        if res.status_code != 200:
+            raise NetworkError("%s: Status code %i" % (url, res.status_code))
+
+        obj = res.json()
+
+        if obj.get("error", None) is not None:
+            raise RemoteError(obj["error"])
+
+    def remove_spirit_cask(self, spirit_id):
+        url = self.url_prefix + "casks/remove/spirit"
+
+        res = requests.post(url, json.dumps({
+            "spirit_id": spirit_id
+        }))
+
+        if res.status_code != 200:
+            raise NetworkError("%s: Status code %i" % (url, res.status_code))
+
+        obj = res.json()
+
+        if obj.get("error", None) is not None:
+            raise RemoteError(obj["error"])
+
+    def remove_casks(self, mode):
+        url = self.url_prefix + "casks/remove/" + mode
 
         res = requests.post(url)
 

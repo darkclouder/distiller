@@ -5,7 +5,6 @@ import json
 
 from .PathFinder import PathFinder
 from distiller.api.AbstractTask import AbstractTask
-from distiller.api.DefaultPipe import DefaultPipe
 
 
 class TaskLoader:
@@ -34,6 +33,8 @@ class TaskLoader:
         except:
             raise TaskLoadError("Definition file for task %s is corrupt" % task_id)
 
+        # FIXME: why does this subclass check work here but for MongoDriver a workaround needs to be built?
+        # FIXME: by creating a class_id.
         task_classes = [
             v
             for (_, v) in inspect.getmembers(task_module, inspect.isclass)
@@ -84,7 +85,8 @@ class TaskLoader:
 
     @classmethod
     def spirit_is_pipe(cls, spirit):
-        return issubclass(spirit.__class__, DefaultPipe)
+        return spirit.class_id() == "DefaultPipe"
+
 
 class TaskLoadError(Exception):
     pass

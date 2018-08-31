@@ -22,10 +22,12 @@ class RequestHandler:
         return self.resolve_any("post", url)
 
     def resolve_any(self, req_type, url):
+        # TODO: make this more efficient (sub-linear) with some prefix patterns maybe?
+
         for (pattern, func) in self.routes[req_type]:
             match = pattern.fullmatch(url)
 
             if match is not None:
-                return (func, match.groupdict())
+                return func, match.groupdict()
 
         return None

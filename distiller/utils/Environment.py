@@ -4,8 +4,9 @@ import os
 from distiller.core.Logger import Logger
 from distiller.core.Distiller import Distiller
 from distiller.core.impl.Watchdog import Watchdog
+from distiller.core.impl.GarbageCollector import GarbageCollector
 
-from .Configuration import Configuration
+from distiller.utils.Configuration import Configuration
 
 
 class Environment:
@@ -24,8 +25,6 @@ class Environment:
         self.logger = Logger(log_module.module_class(self), self)
 
     def __init_drivers(self):
-        # TODO: search path
-
         log = self.logger.claim("Env")
 
         self.drivers = []
@@ -63,6 +62,7 @@ class Environment:
         self.__init_scheduler()
         self.__init_watchdog()
 
+        self.gc = GarbageCollector(self)
         self.distiller = Distiller(self)
 
     def __init_scheduler(self):

@@ -64,7 +64,7 @@ class SimpleScheduler(Scheduler):
                 else:
                     self.logger.warning(error_message)
 
-                # Abort spirit (this also removes all tasks that depend on the errornous spirit)
+                # Abort spirit (this also removes all tasks that depend on the erroneous spirit)
                 self.graph.abort_spirit(transaction_id)
 
     def time_until_next(self):
@@ -79,7 +79,10 @@ class SimpleScheduler(Scheduler):
 
             return 0
 
-    def add_target(self, target_spirit_id, options={}):
+    def add_target(self, target_spirit_id, options=None):
+        if options is None:
+            options = {}
+
         schedule_info = SchedulingInfo(
             target_spirit_id,
             options.get("age_requirement", None),
@@ -98,6 +101,13 @@ class SimpleScheduler(Scheduler):
     def remove_target(self, target_spirit_id, persistent=False):
         with self._lock:
             self.backlog.remove(target_spirit_id, persistent)
+
+        self.logger.notice(
+            "Remove %s from scheduler%s" % (
+                spirit_id_to_label(*target_spirit_id),
+                (" persistently" if persistent else "")
+            )
+        )
 
     def event_still_updated(self, still):
         # TODO update scheduling graph with new still definition (update dependencies)

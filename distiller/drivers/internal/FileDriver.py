@@ -40,11 +40,15 @@ class FileDriver(DataDriver):
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-    def delete_all_casks(self, config, whitelist=[]):
+    def delete_all_casks(self, config, whitelist=None):
+        if whitelist is None:
+            whitelist = []
+
         root_path = config.get("drivers.settings.FileDriver.cask_path", path=True)
 
-        # Get the full paths of all whitelisted spirits
+        # Get the full paths of all whitelisted spirits and all corresponding temp paths
         whitelisted_paths = [self._get_data_path(item, config) for item in whitelist]
+        whitelisted_paths += [get_temp_path(path) for path in whitelisted_paths]
 
         # Get the prefixes of all paths that are whitelisted
         # Those paths need to be walked to check if there is something to delete

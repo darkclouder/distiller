@@ -1,6 +1,7 @@
 import json
 
 from distiller.helpers.extend import extend
+from distiller.api.DynamicClass import DynamicClass
 
 
 def parameter_id(parameters):
@@ -11,7 +12,7 @@ def spirit_id_to_label(still_id, parameters):
     return "%s(%s)" % (still_id, parameter_id(parameters))
 
 
-class AbstractTask:
+class AbstractTask(DynamicClass):
     def __init__(self, parameters=None):
         self.manual_parameters = parameters
         self.parameters = self.default_parameters()
@@ -64,8 +65,8 @@ class AbstractTask:
     def stored_in(self):
         """Should return a cask or None to determine where the task results are stored.
         If None is returned, this should be always returned, independent of parameters.
-        If None is returned, this task is not materalised but instead executed every time.
-        (Note: None is mainly used for non-materalised tasks such as pipes)
+        If None is returned, this task is not materialised but instead executed every time.
+        (Note: None is mainly used for non-materialised tasks such as pipes)
         """
         raise NotImplementedError
 
@@ -73,7 +74,7 @@ class AbstractTask:
         """This returns an integer indicating how often a task can appear in an execution tree.
         This value exists to prevent endless recursive definitions.
         Note: A task with the exact same parameters can never reoccur,
-        this is only for reoccurrences with different parameters.
+        this is only for recurrences with different parameters.
         Usually this function should return 1.
         For special cases, like general tasks that are reused or pipes, this value might be `sys.maxsize`.
         Attention: Only return something different than 1 if you know what you're doing!
@@ -88,3 +89,7 @@ class AbstractTask:
         only use those to avoid side effects.
         """
         return []
+
+    @staticmethod
+    def class_id():
+        return "AbstractTask"

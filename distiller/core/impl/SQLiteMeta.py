@@ -5,7 +5,7 @@ import datetime
 
 from ..interfaces.Meta import Meta
 from distiller.core.impl.SimpleScheduler.SchedulingInfo import SchedulingInfo
-from distiller.api.AbstractTask import parameter_id, spirit_id_to_label
+from distiller.api.AbstractTask import parameter_id
 
 
 class SQLiteMeta(Meta):
@@ -72,11 +72,10 @@ class SQLiteMeta(Meta):
     def get_cask(self, spirit_id):
         with self.__connect_db() as conn:
             spirit_name, parameters = spirit_id
-            enc_parameters = json.dumps(parameters)
 
             csr = conn.execute(
                 'SELECT last_completion AS "[timestamp]" FROM Casks WHERE spirit_name=? AND parameters=?',
-                (spirit_name, enc_parameters)
+                (spirit_name, parameter_id(parameters))
             )
             row = csr.fetchone()
 
@@ -85,7 +84,7 @@ class SQLiteMeta(Meta):
 
             return {
                 "spirit_id": (spirit_name, parameters),
-                "last_completion": row[2]
+                "last_completion": row[0]
             }
 
     def get_all_casks(self):
@@ -108,7 +107,7 @@ class SQLiteMeta(Meta):
 
         with self.__connect_db() as conn:
             spirit_name, parameters = spirit_id
-            enc_parameters = json.dumps(parameters)
+            enc_parameters = parameter_id(parameters)
 
             csr = conn.execute(
                 "SELECT 1 FROM Casks WHERE spirit_name=? AND parameters=?",
@@ -131,15 +130,14 @@ class SQLiteMeta(Meta):
         with self.logger.catch(sqlite3.OperationalError).critical():
             with self.__connect_db() as conn:
                 spirit_name, parameters = spirit_id
-                enc_parameters = json.dumps(parameters)
 
                 csr = conn.execute(
                     "DELETE FROM Casks WHERE spirit_name=? AND parameters=?",
-                    (spirit_name, enc_parameters)
+                    (spirit_name, parameter_id(parameters))
                 )
 
         if csr.rowcount < 1:
-            raise ValueError("Cask for spirit %i does not exist" % spirit_id)
+            raise ValueError("Cask for spirit %s does not exist" % str(spirit_id))
 
     def get_scheduled_infos(self):
         with self.logger.catch(sqlite3.Error).critical():
@@ -182,9 +180,11 @@ class SQLiteMeta(Meta):
     def remove_scheduled_spirit(self, spirit_id):
         with self.logger.catch(sqlite3.OperationalError).critical():
             with self.__connect_db() as conn:
+                spirit_name, parameters = spirit_id
+
                 csr = conn.execute(
                     "DELETE FROM ScheduledTargets WHERE spirit_name=? AND parameters=?",
-                    spirit_id_to_label(*spirit_id)
+                    (spirit_name, parameter_id(parameters))
                 )
 
         if csr.rowcount < 1:

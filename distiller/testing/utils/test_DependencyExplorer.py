@@ -6,8 +6,8 @@ from distiller.utils.DependencyExplorer import DependencyExplorer, DependencyNod
 
 class TestDependencyExplorer(unittest.TestCase):
     def setUp(self):
-        self.t1 = TaskLoader.init(("testing.parameter_requires_pipe", {"requires":[], "id": 1}))
-        self.t2 = TaskLoader.init(("testing.parameter_requires", {"requires":[self.t1.spirit_id()], "id": 2}))
+        self.t1 = TaskLoader.init(("testing.parameter_requires_pipe", {"requires": [], "id": 1}))
+        self.t2 = TaskLoader.init(("testing.parameter_requires", {"requires": [self.t1.spirit_id()], "id": 2}))
         self.t3 = TaskLoader.init(("testing.parameter_requires", {"requires": [self.t2.spirit_id()], "id": 3}))
         self.t4 = TaskLoader.init(("testing.parameter_requires_pipe", {"requires": [self.t3.spirit_id()], "id": 4}))
         self.t5 = TaskLoader.init(("testing.parameter_requires", {"requires": [self.t4.spirit_id()], "id": 5}))
@@ -66,6 +66,7 @@ def _repr(curr):
         ) + ")"
 
     return rep
+
 
 if __name__ == "__main__":
     unittest.main()

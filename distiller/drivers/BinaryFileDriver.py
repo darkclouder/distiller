@@ -8,7 +8,7 @@ from distiller.drivers.internal.FileDriver import FileDriver, get_temp_path
 
 class BinaryFileDriver(FileDriver):
     def __init__(self, **kwargs):
-        self.kwargs = kwargs
+        super().__init__(**kwargs)
 
     def read(self, spirit, config):
         return FileReader(self._get_data_path(spirit, config), **self.kwargs)
@@ -69,13 +69,14 @@ class FileWriter(Writer):
     def __init__(self, file_path, mode, **kwargs):
         self.file_path = file_path
         self.kwargs = kwargs
-        self.commited = False
+        self.committed = False
         self.mode = mode + ("b" if self.kwargs.get("binary", False) else "")
+        self.file = None
 
     def write(self, data):
         """Write a relational entry, or an entire blob"""
 
-        if self.commited:
+        if self.committed:
             raise WriteAfterCommitException
 
         self.file.write(data)
@@ -83,10 +84,10 @@ class FileWriter(Writer):
     def commit(self):
         """Commits the change. Write operations after this lead to an error"""
 
-        if self.commited:
+        if self.committed:
             raise WriteAfterCommitException
 
-        self.commited = True
+        self.committed = True
         self.file.close()
         self.file = None
 
@@ -100,7 +101,7 @@ class FileWriter(Writer):
     def __exit__(self, type, value, traceback):
         """If exit appears without a commit, undo all changes"""
 
-        if not self.commited:
+        if not self.committed:
             self.file.close()
             os.remove(get_temp_path(self.file_path))
             self.file = None

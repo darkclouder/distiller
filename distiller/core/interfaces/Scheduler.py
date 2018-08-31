@@ -45,7 +45,7 @@ class Scheduler:
 
         raise NotImplementedError
 
-    def add_target(self, target_spirit, options={}):
+    def add_target(self, target_spirit, options=None):
         """Adds a spirit for only one execution to the scheduler.
         This is usually done for manual execution.
 

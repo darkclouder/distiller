@@ -16,7 +16,7 @@ class Reader:
 
 class ReadIterator:
     """This is an abstract iterator to be used for either type of blob or it iterator.
-    The iterator should be opend/closed with a 'with' statement, and its object
+    The iterator should be opened/closed with a 'with' statement, and its object
     should then be able to iterate over.
     """
 

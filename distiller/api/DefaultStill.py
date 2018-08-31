@@ -1,6 +1,4 @@
-import json
-
-from .AbstractTask import AbstractTask
+from distiller.api.AbstractTask import AbstractTask
 
 
 class DefaultStill(AbstractTask):

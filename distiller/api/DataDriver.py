@@ -1,4 +1,7 @@
-class DataDriver:
+from distiller.api.DynamicClass import DynamicClass
+
+
+class DataDriver(DynamicClass):
     def read(self, spirit, config):
         """Get a data reader for a specific spirit.
         A data reader is a subclass of Reader
@@ -31,12 +34,16 @@ class DataDriver:
 
         raise NotImplementedError
 
-    def delete_all_casks(self, config, whitelist=[]):
+    def delete_all_casks(self, config, whitelist=None):
         """Delete all casks visible to a certain driver (even corrupt ones) [except whitelisted ones]
 
         Arguments:
         whitelist -- List of spirits not to delete, Default: []
         """
+
+    @staticmethod
+    def class_id():
+        return "DataDriver"
 
 
 class WriteAfterCommitException(Exception):

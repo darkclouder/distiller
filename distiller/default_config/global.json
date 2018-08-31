@@ -15,6 +15,15 @@
         "settings": {
             "FileDriver": {
                 "cask_path": "!:d/casks"
+            },
+            "MongoDriver": {
+                "default_connection": "local",
+                "connections": {
+                    "local": {
+                        "uri": "mongodb://127.0.0.1:27017",
+                        "database": "distiller"
+                    }
+                }
             }
         }
     }

@@ -5,6 +5,7 @@ import dateutil.parser
 
 from distiller.helpers.RequestHandler import RequestHandler
 from distiller.utils.PathFinder import PathFinder
+from distiller.utils.TaskLoader import TaskLoader
 from distiller.core.interfaces.Scheduler import FinishState
 
 
@@ -19,6 +20,8 @@ class CoreHandler(RequestHandler):
         self.post("/tasks/heartbeat/(?P<transaction_id>[0-9]+)", self.heartbeat)
         self.post("/targets/add", self.add_target)
         self.post("/targets/remove", self.remove_target)
+        self.post("/casks/remove/spirit", self.remove_cask_spirit)
+        self.post("/casks/remove/(?P<mode>all|corrupt|unused)", self.remove_casks)
 
     def healthcheck(self, handle, params):
         handle.text(str(handle.server.env.distiller.is_running()))
@@ -135,7 +138,7 @@ class CoreHandler(RequestHandler):
         try:
             spirit = body.get("spirit_id", None)
             options = body.get("options", {})
-        except Exception as e:
+        except:
             return handle.error(400)
 
         if spirit is None:
@@ -146,6 +149,44 @@ class CoreHandler(RequestHandler):
                 (spirit[0], spirit[1]),
                 persistent=options.get("persistent", False)
             )
+        except Exception as e:
+            handle.server.env.logger.claim("CoreHandler").error(e)
+            return handle.error(500)
+
+        handle.json({"status": "ok"})
+
+    def remove_cask_spirit(self, handle, params, body):
+        try:
+            spirit_id = body.get("spirit_id", None)
+        except Exception:
+            return handle.error(400)
+
+        if spirit_id is None:
+            return handle.error(400)
+
+        try:
+            spirit = TaskLoader.init(spirit_id)
+            handle.server.env.gc.delete_spirit(spirit)
+        except Exception as e:
+            handle.server.env.logger.claim("CoreHandler").error(e)
+            return handle.error(500)
+
+        handle.json({"status": "ok"})
+
+    def remove_casks(self, handle, params, body):
+        modes = {
+            "all": handle.server.env.gc.delete_all,
+            "corrupt": handle.server.env.gc.delete_corrupt,
+            "unused": handle.server.env.gc.delete_unused,
+        }
+
+        mode = params["mode"]
+
+        if mode not in modes:
+            return handle.error(400)
+
+        try:
+            modes[mode]()
         except Exception as e:
             handle.server.env.logger.claim("CoreHandler").error(e)
             return handle.error(500)

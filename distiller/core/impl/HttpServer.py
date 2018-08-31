@@ -1,5 +1,4 @@
 from http.server import HTTPServer
-import time
 import threading
 
 from distiller.helpers.HttpRequestHandler import HttpRequestHandler

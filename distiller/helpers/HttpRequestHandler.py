@@ -1,6 +1,5 @@
 from http.server import BaseHTTPRequestHandler
 import json
-import codecs
 import sys
 
 
@@ -69,4 +68,5 @@ class HttpRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(bytes(message, "utf8"))
 
     def log_request(self, code='-', size='-'):
-        pass # silence log requests
+        # silence log requests
+        pass

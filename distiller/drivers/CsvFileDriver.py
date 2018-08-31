@@ -13,7 +13,7 @@ class CsvFileDriver(FileDriver):
         super().__init__(**kwargs)
 
     def read(self, spirit, config):
-        return  FileReader(self._get_data_path(spirit, config), **self.kwargs)
+        return FileReader(self._get_data_path(spirit, config), **self.kwargs)
 
     def write(self, spirit, config):
         data_path = self._get_data_path(spirit, config, create_path=True)
@@ -82,12 +82,14 @@ class CsvFileWriter(Writer):
     def __init__(self, file_path, **kwargs):
         self.file_path = file_path
         self.kwargs = kwargs
-        self.commited = False
+        self.committed = False
+        self.file = None
+        self.writer = None
 
     def write(self, data):
         """Write a relational entry, or an entire blob"""
 
-        if self.commited:
+        if self.committed:
             raise WriteAfterCommitException
 
         self.writer.writerow(data)
@@ -95,10 +97,10 @@ class CsvFileWriter(Writer):
     def commit(self):
         """Commits the change. Write operations after this lead to an error"""
 
-        if self.commited:
+        if self.committed:
             raise WriteAfterCommitException
 
-        self.commited = True
+        self.committed = True
         self.file.close()
         self.writer = None
         self.file = None
@@ -108,7 +110,7 @@ class CsvFileWriter(Writer):
     def __exit__(self, type, value, traceback):
         """If exit appears without a commit, undo all changes"""
 
-        if not self.commited:
+        if not self.committed:
             self.file.close()
             os.remove(get_temp_path(self.file_path))
             self.writer = None
@@ -153,13 +155,15 @@ class UpdateCsvFileWriter(Writer):
         self.file_path = file_path
         self.key = key
         self.kwargs = kwargs
-        self.commited = False
+        self.committed = False
+        self.file = None
+        self.writer = None
 
         self.columns = []
         self.key_index = {}
 
     def write(self, data):
-        if self.commited:
+        if self.committed:
             raise WriteAfterCommitException
 
         if data[self.key] in self.key_index:
@@ -171,7 +175,7 @@ class UpdateCsvFileWriter(Writer):
     def commit(self):
         """Commits the change. Write operations after this lead to an error"""
 
-        if self.commited:
+        if self.committed:
             raise WriteAfterCommitException
 
         self.file = open(self.file_path, "w", **self.kwargs.get("file_params", {}))

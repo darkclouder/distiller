@@ -1,7 +1,6 @@
 import os
 import sys
 import json
-import pkg_resources
 
 from .PathFinder import PathFinder
 from distiller.helpers.extend import extend
@@ -12,11 +11,11 @@ class Configuration:
         self.conf_dict = conf_dict
 
     def get(self, key, default=None, path=False):
-        hierachy = key.split(".")
+        hierarchy = key.split(".")
 
         curr = self.conf_dict
 
-        for level in hierachy:
+        for level in hierarchy:
             if level in curr:
                 curr = curr[level]
             else:

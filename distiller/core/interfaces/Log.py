@@ -1,3 +1,3 @@
 class Log:
-    def write(self, authority, level, message):
+    def write(self, message):
         raise NotImplementedError

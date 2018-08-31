@@ -1,5 +1,6 @@
 from distiller.api.Reader import ReadIterator
 
+
 class RowToBlobIterator(ReadIterator):
     def __init__(self, row_iterator):
         self.row_iterator = row_iterator

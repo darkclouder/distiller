@@ -68,7 +68,7 @@ class Watchdog:
                 time.sleep(timeout.total_seconds())
             else:
                 sec_until_timeout = (next_timeout + timeout - now).total_seconds()
-                time.sleep(max(0, sec_until_timeout))
+                time.sleep(max(0.0, sec_until_timeout))
 
         self.logger.notice("Watchdog shutdown done")
 

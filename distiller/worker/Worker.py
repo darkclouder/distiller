@@ -1,4 +1,3 @@
-import time
 import tempfile
 import shutil
 import importlib
@@ -22,6 +21,8 @@ class Worker:
 
         driver_module = importlib.import_module(self.config.get("spirits.default_driver.module"))
         self.default_driver = driver_module.module_class(**self.config.get("spirits.default_driver.params"))
+
+        self.task_dir = None
 
     def run_blocking(self):
         print("Worker running...")

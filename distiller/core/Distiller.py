@@ -29,7 +29,7 @@ class Distiller:
                 try:
                     os.kill(pid, 0)
                 except OSError:
-                    self.logger.notice("Deamon not running, but pid file exists")
+                    self.logger.notice("Daemon not running, but pid file exists")
                     os.remove(self.pidfile)
                     return False
                 else:

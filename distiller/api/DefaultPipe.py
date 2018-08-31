@@ -1,5 +1,4 @@
 import sys
-import json
 
 from .AbstractTask import AbstractTask
 
@@ -11,3 +10,6 @@ class DefaultPipe(AbstractTask):
 
     def occurrences(self):
         return sys.maxsize
+
+    def class_id(self):
+        return "DefaultPipe"

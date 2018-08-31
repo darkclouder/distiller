@@ -46,8 +46,7 @@ class Logger:
 
 
 class LoggerInterface:
-
-    def _log(level, *args, **kwargs):
+    def _log(self, level, *args, **kwargs):
         raise NotImplementedError
 
     def debug(self, *args, **kwargs):
@@ -74,7 +73,7 @@ class ClaimedLogger(LoggerInterface):
     def reclaim(self, authority):
         return self.logger.claim(authority)
 
-    def _log(self, level, message):
+    def _log(self, level, message, *args, **kwargs):
         self.logger._write_log(level, self.authority, message)
 
     def catch(self, expected_exception):
@@ -86,7 +85,7 @@ class CatchLogger(LoggerInterface):
         self.claimed_logger = claimed_logger
         self.expected_exception = expected_exception
 
-    def _log(self, level):
+    def _log(self, level, *args, **kwargs):
         return CatchLoggerCase(self.claimed_logger, self.expected_exception, level)
 
 
