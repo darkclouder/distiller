@@ -1,26 +1,40 @@
 class Meta:
-    def get_cask(self, spirit):
+    def get_cask(self, spirit_id):
         """Returns cask information for spirit
 
         Arguments:
-        spirit -- Spirit to get cask from
+        spirit -- Spirit id to get cask from
         """
 
         raise NotImplementedError
 
-    def update_cask(self, spirit, completion=None):
+    def get_all_casks(self):
+        """Returns all cask information that is available as an array
+        """
+
+    def update_cask(self, spirit_id, completion=None):
         """Update cask information for spirit
 
         Arguments:
-        spirit -- Spirit to update
+        spirit -- Spirit id to update
 
         Keyword arguments:
-        completion -- New complition date, None to set to now
+        completion -- New completion date, None to set to now
         """
 
         raise NotImplementedError
 
-    def get_scheduled_spirits(self):
+    def invalidate_cask(self, spirit_id):
+        """Invalidate cask
+        This usually removes all meta data about a spirit
+
+        Arguments:
+        spirit -- Spirit id to invalidate cask for
+        """
+
+        raise NotImplementedError
+
+    def get_scheduled_infos(self):
         """Returns array of scheduling info of all (persistent) scheduled spirits"""
 
         raise NotImplementedError

@@ -1,7 +1,4 @@
 class DataDriver:
-    def __init__(self, conf):
-        self.conf = conf
-
     def read(self, spirit, config):
         """Get a data reader for a specific spirit.
         A data reader is a subclass of Reader

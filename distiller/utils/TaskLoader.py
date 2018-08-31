@@ -5,6 +5,7 @@ import json
 
 from .PathFinder import PathFinder
 from distiller.api.AbstractTask import AbstractTask
+from distiller.api.DefaultPipe import DefaultPipe
 
 
 class TaskLoader:
@@ -55,24 +56,35 @@ class TaskLoader:
             del cls.cached_spirits[task_id]
 
     @classmethod
-    def init(cls, spirit, task_root=None, always_refresh=True):
+    def init(cls, spirit_id, task_root=None, always_refresh=True, none_on_error=False):
+        still_id, parameters = spirit_id
+
         if always_refresh:
-            cls.invalidate(spirit[0])
+            cls.invalidate(still_id)
 
         # TODO: this might be a bit inefficient to create json string for every access
-        json_params = json.dumps(spirit[1], sort_keys=True)
+        json_params = json.dumps(parameters, sort_keys=True)
 
-        if spirit[0] not in cls.cached_spirits:
-            cls.cached_spirits[spirit[0]] = {}
+        if still_id not in cls.cached_spirits:
+            cls.cached_spirits[still_id] = {}
 
-        if json_params in cls.cached_spirits[spirit[0]]:
-            return cls.cached_spirits[spirit[0]][json_params]
+        if json_params in cls.cached_spirits[still_id]:
+            return cls.cached_spirits[still_id][json_params]
 
-        spirit_instance = cls.load(spirit[0], task_root=task_root)(spirit[1])
-        cls.cached_spirits[spirit[0]][json_params] = spirit_instance
+        if none_on_error:
+            try:
+                spirit_instance = cls.load(still_id, task_root=task_root)(parameters)
+            except TaskLoadError:
+                return None
+        else:
+            spirit_instance = cls.load(still_id, task_root=task_root)(parameters)
+        cls.cached_spirits[still_id][json_params] = spirit_instance
 
         return spirit_instance
 
+    @classmethod
+    def spirit_is_pipe(cls, spirit):
+        return issubclass(spirit.__class__, DefaultPipe)
 
 class TaskLoadError(Exception):
     pass

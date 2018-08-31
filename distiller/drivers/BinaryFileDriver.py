@@ -116,3 +116,6 @@ class BinaryWriteModes(WriteModes):
 
     def append(self):
         return FileWriter(self.file_path, "a", **self.kwargs)
+
+
+module_class = BinaryFileDriver

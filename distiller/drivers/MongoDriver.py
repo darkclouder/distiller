@@ -6,6 +6,7 @@ from distiller.drivers.internal.RowToBlobIterator import RowToBlobIterator
 from pymongo import MongoClient
 
 
+# TODO: implement missing methods from interface
 class MongoDriver(DataDriver):
     def __init__(self, **kwargs):
         self.kwargs = kwargs

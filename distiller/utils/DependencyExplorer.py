@@ -1,33 +1,34 @@
-import collections
-
-from distiller.api.DefaultPipe import DefaultPipe
 from distiller.utils.TaskLoader import TaskLoader
 
 
 class DependencyExplorer:
     @classmethod
-    def explore(cls, target_spirit_id, skip_pipes=True):
-        return cls.__explore(TaskLoader.init(target_spirit_id), {}, skip_pipes=skip_pipes)[1]
+    def build_graph(cls, target_spirit_id, skip_pipes=True):
+        return cls.__explore(TaskLoader.init(target_spirit_id), {}, skip_pipes=skip_pipes)[2]
+
+    @classmethod
+    def involved_spirits(cls, target_spirit_id, skip_pipes=True):
+        return list(cls.__explore(TaskLoader.init(target_spirit_id), {}, skip_pipes=skip_pipes)[0].keys())
 
     @classmethod
     def __explore(cls, target_spirit, nodes, skip_pipes=True):
         all_parents = set()
         all_roots = set()
 
-        skip = skip_pipes and issubclass(target_spirit.__class__, DefaultPipe)
+        skip = skip_pipes and TaskLoader.spirit_is_pipe(target_spirit)
 
         curr = cls.__get_node(nodes, target_spirit)
 
         for dep in target_spirit.requires():
             dep_spirit = TaskLoader.init(dep)
 
-            parents, roots = cls.__explore(dep_spirit, nodes, skip_pipes=skip_pipes)
+            _, parents, roots = cls.__explore(dep_spirit, nodes, skip_pipes=skip_pipes)
 
             all_parents.update(parents)
             all_roots.update(roots)
 
         if skip:
-            return all_parents, all_roots
+            return nodes, all_parents, all_roots
         else:
             for parent in all_parents:
                 curr.add_parent(parent)
@@ -37,7 +38,7 @@ class DependencyExplorer:
 
                 all_roots = [curr]
 
-            return [curr], all_roots
+            return nodes, [curr], all_roots
 
     @classmethod
     def __get_node(cls, nodes, spirit):

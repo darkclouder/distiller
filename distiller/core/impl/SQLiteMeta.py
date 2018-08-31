@@ -1,13 +1,9 @@
 import os
 import sqlite3
 import json
-import sys
 import datetime
 
-from distiller.core.Logger import Logger
 from ..interfaces.Meta import Meta
-from distiller.utils.TaskLoader import TaskLoader, TaskLoadError
-from distiller.utils.PathFinder import PathFinder
 from distiller.core.impl.SimpleScheduler.SchedulingInfo import SchedulingInfo
 from distiller.api.AbstractTask import parameter_id, spirit_id_to_label
 
@@ -25,7 +21,7 @@ class SQLiteMeta(Meta):
             self.logger.notice("Meta database loaded")
 
     def __connect_db(self):
-        data_root = PathFinder.get_data_root()
+        data_root = os.path.dirname(self.db_path)
 
         try:
             if not os.path.exists(data_root):
@@ -49,14 +45,18 @@ class SQLiteMeta(Meta):
                 os.remove(self.db_path)
 
         with self.__connect_db() as conn:
-            queries = [
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS Casks (
-                    spirit_id VARCHAR PRIMARY KEY,
+                    spirit_name VARCHAR NOT NULL,
+                    parameters VARCHAR NOT NULL,
                     last_completion DATETIME
-                );
-                """,
-                """
+                )
+            """)
+            conn.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS spirit_id
+                ON Casks(spirit_name, parameters)
+            """)
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS ScheduledTargets (
                     schedule_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     spirit_name VARCHAR,
@@ -66,47 +66,82 @@ class SQLiteMeta(Meta):
                     age_requirement INTEGER,
                     priority INTEGER NOT NULL
                 )
-                """
-            ]
-
-            for query in queries:
-                conn.execute(query)
+            """)
             conn.commit()
 
-    def get_cask(self, spirit):
+    def get_cask(self, spirit_id):
         with self.__connect_db() as conn:
-            spirit_id = spirit.label()
+            spirit_name, parameters = spirit_id
+            enc_parameters = json.dumps(parameters)
 
             csr = conn.execute(
-                'SELECT last_completion AS "[timestamp]" FROM Casks WHERE spirit_id=?',
-                (spirit_id,)
+                'SELECT last_completion AS "[timestamp]" FROM Casks WHERE spirit_name=? AND parameters=?',
+                (spirit_name, enc_parameters)
             )
             row = csr.fetchone()
 
             if row is None:
                 return None
 
-            return {"last_completion": row[0]}
+            return {
+                "spirit_id": (spirit_name, parameters),
+                "last_completion": row[2]
+            }
 
-    def update_cask(self, spirit, completion=None):
+    def get_all_casks(self):
+        with self.__connect_db() as conn:
+            csr = conn.execute(
+                'SELECT spirit_name, parameters, last_completion AS "[timestamp]" FROM Casks'
+            )
+
+            return [
+                {
+                    "spirit_id": (row[0], json.loads(row[1])),
+                    "last_completion": row[2]
+                }
+                for row in csr.fetchall()
+            ]
+
+    def update_cask(self, spirit_id, completion=None):
         if completion is None:
             completion = datetime.datetime.now()
 
         with self.__connect_db() as conn:
-            spirit_id = spirit.label()
+            spirit_name, parameters = spirit_id
+            enc_parameters = json.dumps(parameters)
 
-            csr = conn.execute("SELECT 1 FROM Casks WHERE spirit_id=?", (spirit_id,))
+            csr = conn.execute(
+                "SELECT 1 FROM Casks WHERE spirit_name=? AND parameters=?",
+                (spirit_name, enc_parameters)
+            )
             row = csr.fetchone()
 
             if row is None:
                 conn.execute(
-                    "INSERT INTO Casks (spirit_id, last_completion) VALUES (?,?)",
-                    (spirit_id, completion)
+                    "INSERT INTO Casks (spirit_name, parameters, last_completion) VALUES (?,?,?)",
+                    (spirit_name, enc_parameters, completion)
                 )
             else:
-                conn.execute("UPDATE Casks SET last_completion=? WHERE spirit_id=?", (completion, spirit_id))
+                conn.execute(
+                    "UPDATE Casks SET last_completion=? WHERE spirit_name=? AND parameters=?",
+                    (completion, spirit_name, enc_parameters)
+                )
 
-    def get_scheduled_spirits(self):
+    def invalidate_cask(self, spirit_id):
+        with self.logger.catch(sqlite3.OperationalError).critical():
+            with self.__connect_db() as conn:
+                spirit_name, parameters = spirit_id
+                enc_parameters = json.dumps(parameters)
+
+                csr = conn.execute(
+                    "DELETE FROM Casks WHERE spirit_name=? AND parameters=?",
+                    (spirit_name, enc_parameters)
+                )
+
+        if csr.rowcount < 1:
+            raise ValueError("Cask for spirit %i does not exist" % spirit_id)
+
+    def get_scheduled_infos(self):
         with self.logger.catch(sqlite3.Error).critical():
             with self.__connect_db() as conn:
                 csr = conn.execute("""

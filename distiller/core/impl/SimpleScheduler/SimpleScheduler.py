@@ -8,11 +8,6 @@ from distiller.core.impl.SimpleScheduler.SchedulingInfo import SchedulingInfo
 
 from distiller.api.AbstractTask import spirit_id_to_label
 
-# TODO: handle pipes in Scheduler
-# pipes are only executed when read from
-# so simply remove them from the execution tree? (just skip them when exploring the execution tree, and using its
-# dependencies as previous nodes instead)
-
 
 class SimpleScheduler(Scheduler):
     def __init__(self, env):
@@ -58,7 +53,7 @@ class SimpleScheduler(Scheduler):
                 self.graph.finish_spirit(transaction_id)
 
                 # Only update cask date for successful execution
-                self.env.meta.update_cask(spirit)
+                self.env.meta.update_cask(spirit.spirit_id())
             else:
                 error_message = "Spirit %s (transaction id %i) exited with state %s: %s" % (
                     spirit, transaction_id, finish_state.name, "No message" if message is None else message
@@ -110,6 +105,11 @@ class SimpleScheduler(Scheduler):
 
     def lock(self):
         return self._lock
+
+    def get_active_targets(self):
+        # FIXME: lock this? double lock in GarbageCollector then though
+
+        return [branch.scheduling_info.spirit_id for branch in self.graph.branches]
 
 
 module_class = SimpleScheduler

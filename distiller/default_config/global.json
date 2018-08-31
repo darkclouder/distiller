@@ -11,8 +11,11 @@
         }
     },
     "drivers": {
-        "FileDriver": {
-            "cask_path": "!:d/casks"
+        "external": [],
+        "settings": {
+            "FileDriver": {
+                "cask_path": "!:d/casks"
+            }
         }
     }
 }

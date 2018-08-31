@@ -11,6 +11,7 @@ class HttpServer:
     def __init__(self, request_handler, env):
         self.env = env
         self.request_handler = request_handler
+        self.server = None
 
     def run(self):
         sock = (
@@ -29,5 +30,5 @@ class HttpServer:
         self.server.serve_forever(poll_interval=HttpServer.poll_interval)
 
     def stop(self):
-        if self.server:
+        if self.server is not None:
             self.server.shutdown()

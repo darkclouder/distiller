@@ -84,7 +84,7 @@ class SchedulingBacklog:
     def __load_persistent(self):
         """Load all persistent scheduling rules from the meta db"""
 
-        schedule_info = self.env.meta.get_scheduled_spirits()
+        schedule_info = self.env.meta.get_scheduled_infos()
 
         for si in schedule_info:
             try:
@@ -154,7 +154,7 @@ class SchedulingBacklog:
         return pp_time
 
     def __get_cask_datetime(self, target_spirit):
-        cask_meta = self.env.meta.get_cask(target_spirit)
+        cask_meta = self.env.meta.get_cask(target_spirit.spirit_id())
 
         if cask_meta is None:
             return None

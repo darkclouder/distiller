@@ -49,11 +49,11 @@ class TestDependencyExplorer(unittest.TestCase):
         n9.add_parent(n6).add_parent(n8)
         n10.add_parent(n6)
 
-        full_graph = {_repr(root) for root in DependencyExplorer.explore(self.t11.spirit_id())}
+        full_graph = {_repr(root) for root in DependencyExplorer.build_graph(self.t11.spirit_id())}
         self.assertEqual(full_graph, {_repr(n2), _repr(n6), _repr(n8)})
 
     def _get_roots(self, spirit):
-        return {root.spirit for root in DependencyExplorer.explore(spirit.spirit_id())}
+        return {root.spirit for root in DependencyExplorer.build_graph(spirit.spirit_id())}
 
 
 def _repr(curr):

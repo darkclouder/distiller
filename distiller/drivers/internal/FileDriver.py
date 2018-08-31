@@ -17,7 +17,7 @@ class FileDriver(DataDriver):
     def _get_data_path(self, spirit, config, create_path=False):
         task_path = PathFinder.get_task_path(
             spirit.name(),
-            task_root=config.get("drivers.FileDriver.cask_path", path=True)
+            task_root=config.get("drivers.settings.FileDriver.cask_path", path=True)
         )
         parameter_id = self._simplify_file_name(spirit.label())
 
@@ -41,7 +41,7 @@ class FileDriver(DataDriver):
             os.remove(temp_path)
 
     def delete_all_casks(self, config, whitelist=[]):
-        root_path = config.get("drivers.FileDriver.cask_path", path=True)
+        root_path = config.get("drivers.settings.FileDriver.cask_path", path=True)
 
         # Get the full paths of all whitelisted spirits
         whitelisted_paths = [self._get_data_path(item, config) for item in whitelist]
@@ -75,7 +75,7 @@ class FileDriver(DataDriver):
                 shutil.rmtree(file_path)
 
     def _discover_casks(self, config):
-        root_path = config.get("drivers.FileDriver.cask_path", path=True)
+        root_path = config.get("drivers.settings.FileDriver.cask_path", path=True)
 
         if os.path.exists(root_path):
             casks = []

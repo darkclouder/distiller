@@ -74,3 +74,9 @@ class Scheduler:
         """
 
         raise NotImplementedError
+
+    def get_active_targets(self):
+        """Returns the spirit ids of all targets currently in active scheduler
+        """
+
+        raise NotImplementedError

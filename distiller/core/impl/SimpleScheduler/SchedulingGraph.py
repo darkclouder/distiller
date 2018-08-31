@@ -1,8 +1,6 @@
 import collections
 import datetime
-from enum import Enum
 
-from distiller.utils.TaskLoader import TaskLoader
 from distiller.utils.DependencyExplorer import DependencyExplorer
 
 
@@ -38,7 +36,7 @@ class SchedulingGraph:
         # Therefore the complete execution tree is built up first and then from top down
         # All roots are removed that fulfill the age requirements until none fulfills it
 
-        roots = DependencyExplorer.explore(scheduling_info.spirit_id)
+        roots = DependencyExplorer.build_graph(scheduling_info.spirit_id)
 
         # Remove cached results satisfying age requirements from execution tree
         fixed_roots = []
@@ -157,7 +155,7 @@ class SchedulingGraph:
         return spirit
 
     def __get_cask_datetime(self, target_spirit):
-        cask_meta = self.env.meta.get_cask(target_spirit)
+        cask_meta = self.env.meta.get_cask(target_spirit.spirit_id())
 
         if cask_meta is None:
             return None
