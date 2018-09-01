@@ -3,7 +3,7 @@ import importlib.util
 import inspect
 import json
 
-from .PathFinder import PathFinder
+from distiller.utils.PathFinder import PathFinder
 from distiller.api.AbstractTask import AbstractTask
 
 
@@ -85,8 +85,22 @@ class TaskLoader:
 
     @classmethod
     def spirit_is_pipe(cls, spirit):
-        return spirit.class_id() == "DefaultPipe"
+        return spirit.inherits("DefaultPipe")
 
+    @classmethod
+    def load_dependencies(cls, spirit, config, default_driver=None):
+        if default_driver is None:
+            driver_module = importlib.import_module(config.get("spirits.default_driver.module"))
+            default_driver = driver_module.module_class(**config.get("spirits.default_driver.params"))
+
+        deps = [TaskLoader.init(dep) for dep in spirit.requires()]
+
+        return [
+            default_driver.read(dep, config)
+            if dep.stored_in() is None
+            else dep.stored_in().read(dep, config)
+            for dep in deps
+        ]
 
 class TaskLoadError(Exception):
     pass

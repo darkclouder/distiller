@@ -23,7 +23,7 @@ Configuration
 The constructor of ``BashRunner`` takes one obligatory argument, the relative path
 (within the directory of ``definition.py``) of the script file to run.
 
-``pipe_dependency`` can be set to a number representing the index of the input depnendencies
+``pipe_dependency`` can be set to a number representing the index of the input dependencies
 which should be piped rather than passed as file.
 
 ``mode`` (default: ``replace``) can be either ``replace`` or ``append``, and specifies

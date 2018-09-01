@@ -11,7 +11,7 @@ from distiller.api.AbstractTask import parameter_id
 class SQLiteMeta(Meta):
     def __init__(self, env):
         self.env = env
-        self.logger = self.env.logger.claim("Core")
+        self.logger = self.env.logger.claim("Meta DB")
 
         self.db_path = self.env.config.get("meta.file_path", path=True)
 
@@ -138,6 +138,8 @@ class SQLiteMeta(Meta):
 
         if csr.rowcount < 1:
             raise ValueError("Cask for spirit %s does not exist" % str(spirit_id))
+
+        self.logger.notice("Delete cask for spirit %s" % str(spirit_id))
 
     def get_scheduled_infos(self):
         with self.logger.catch(sqlite3.Error).critical():

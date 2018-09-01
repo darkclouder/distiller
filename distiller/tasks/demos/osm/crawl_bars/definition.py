@@ -9,7 +9,7 @@ class Still(DefaultStill):
     def stored_in(self):
         return CsvFileDriver(
             dict=True,
-            fields=["lat", "lon", "name"],
+            fields=["lat", "lon", "name", "website"],
             file_params={"encoding": "utf-8"}
         )
 
@@ -30,11 +30,13 @@ def do(parameters, input_readers, output_writer):
     with output_writer.replace() as writer:
         for bar in res.get("features", []):
             lat, lon = bar.get("geometry", {}).get("coordinates", (None, None))
+            properties = bar.get("properties", {})
 
             writer.write({
                 "lat": lat,
                 "lon": lon,
-                "name": bar.get("properties", {}).get("name", None),
+                "name": properties.get("name", None),
+                "website": properties.get("website", None)
             })
 
         writer.commit()

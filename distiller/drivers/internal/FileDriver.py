@@ -19,7 +19,7 @@ class FileDriver(DataDriver):
             spirit.name(),
             task_root=config.get("drivers.settings.FileDriver.cask_path", path=True)
         )
-        parameter_id = self._simplify_file_name(spirit.label())
+        parameter_id = self._simplify_file_name(spirit.parameter_id())
 
         if create_path and not os.path.exists(task_path):
             os.makedirs(task_path)

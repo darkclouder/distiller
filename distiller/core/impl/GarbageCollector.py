@@ -8,6 +8,9 @@ class GarbageCollector:
         self.logger = self.env.logger.claim("GC")
 
     def delete_all(self, whitelist=None):
+        if whitelist is None:
+            self.logger.notice("Delete all requested")
+
         with self.env.scheduler.lock():
             if whitelist is None:
                 whitelist = set()
@@ -19,14 +22,23 @@ class GarbageCollector:
 
             # # Delete actual cask data
             for driver in self.env.drivers:
-                driver.delete_all_casks(self.env.config, whitelist=whitelist)
+                self.logger.notice("Delete casks for driver %s" % repr(driver))
 
-            # # Delete meta data about cask
-            for spirit in self.__cask_spirits():
+                with self.logger.catch(Exception).warning():
+                    driver.delete_all_casks(self.env.config, whitelist=whitelist)
+
+            # # Delete meta about cask
+            cask_spirits = self.__cask_spirits()
+
+            for spirit in cask_spirits:
                 if spirit is not None and spirit.label() not in whitelist_labels:
                     self.env.meta.invalidate_cask(spirit.spirit_id())
 
+            self.logger.notice("Deleted %i cask(s) from meta db" % len(cask_spirits))
+
     def delete_corrupt(self):
+        self.logger.notice("Delete corrupt requested")
+
         # Delete all casks that are not registered in the meta db,
         # is a pipe (now) or cannot be initiated from its still
         existing_casks = [spirit for spirit in self.__cask_spirits() if not TaskLoader.spirit_is_pipe(spirit)]
@@ -34,6 +46,8 @@ class GarbageCollector:
         self.delete_all(whitelist=existing_casks)
 
     def delete_spirit(self, spirit):
+        self.logger.notice("Delete spirit requested: %s" % spirit)
+
         with self.env.scheduler.lock():
             running_spirits = self.__running_spirits()
 
@@ -44,6 +58,7 @@ class GarbageCollector:
             self.env.meta.invalidate_cask(spirit.spirit_id())
 
     def delete_unused(self):
+        self.logger.notice("Delete unused requested")
         # TODO: whitelist non-permanent scheduled ones?
 
         scheduled_spirits = {

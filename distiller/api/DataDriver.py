@@ -1,6 +1,7 @@
-from distiller.api.DynamicClass import DynamicClass
+from distiller.api.DynamicClass import DynamicClass, class_id
 
 
+@class_id("DataDriver")
 class DataDriver(DynamicClass):
     def read(self, spirit, config):
         """Get a data reader for a specific spirit.
@@ -40,10 +41,6 @@ class DataDriver(DynamicClass):
         Arguments:
         whitelist -- List of spirits not to delete, Default: []
         """
-
-    @staticmethod
-    def class_id():
-        return "DataDriver"
 
 
 class WriteAfterCommitException(Exception):

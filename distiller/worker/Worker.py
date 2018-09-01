@@ -83,7 +83,7 @@ class Worker:
             # depending on if there was an execution error, unit test error, abort, or success
 
             try:
-                dep_input = self.__load_dependencies(spirit)
+                dep_input = TaskLoader.load_dependencies(spirit, self.config, default_driver=self.default_driver)
 
                 if spirit.stored_in() is None:
                     writer = self.default_driver.write(spirit, self.config)
@@ -125,16 +125,6 @@ class Worker:
                     self.__finish_job(job, FinishState.SUCCESS)
 
                 do_heartbeat = False
-
-    def __load_dependencies(self, spirit):
-        deps = [TaskLoader.init(dep) for dep in spirit.requires()]
-
-        return [
-            self.default_driver.read(dep, self.config)
-            if dep.stored_in() is None
-            else dep.stored_in().read(dep, self.config)
-            for dep in deps
-        ]
 
     def __finish_job(self, job, finish_state, message=None):
         self.remote.finish_task(job["transaction_id"], finish_state, message)

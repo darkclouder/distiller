@@ -1,6 +1,8 @@
 Command-line interface
 ======================
 
+TODO!!!!! CLI usage has been changed a lot, adapt whole documentation, not only here
+
 *Note: all CLI commands have to be altered on some systems that run Python 2 when using* ``python``.
 For those use ``python3`` instead.
 Check ``python --version`` to ensure Python 3 is running.

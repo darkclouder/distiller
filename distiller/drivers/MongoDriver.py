@@ -4,9 +4,11 @@ import json
 from distiller.api.DataDriver import DataDriver
 from distiller.api.Reader import Reader, ReadIterator
 from distiller.api.Writer import Writer, WriteModes, WriteAfterCommitException
+from distiller.api.DynamicClass import class_id
 from distiller.drivers.internal.RowToBlobIterator import RowToBlobIterator
 
 
+@class_id("MongoDriver")
 class MongoDriver(DataDriver):
     def __init__(self, **kwargs):
         self.kwargs = kwargs
@@ -47,7 +49,7 @@ class MongoDriver(DataDriver):
         for spirit in whitelist:
             driver = spirit.stored_in()
 
-            if driver.class_id() == "MongoDriver":
+            if driver.inherits("MongoDriver"):
                 connection_id = json.dumps(driver.__credentials(config), sort_keys=True)
                 collection = driver.__collection(spirit)
 
@@ -63,7 +65,7 @@ class MongoDriver(DataDriver):
 
             whitelist_cols = whitelisted.get(connection_id, [])
 
-            client = MongoClient(connection["uri"])
+            client = MongoClient(connection["uri"], connectTimeoutMS=5000)
             db = client[connection["database"]]
 
             drop_collections = set(db.collection_names()).difference(whitelist_cols)
@@ -72,10 +74,6 @@ class MongoDriver(DataDriver):
                 db.drop_collection(coll)
 
             client.close()
-
-    @staticmethod
-    def class_id():
-        return "MongoDriver"
 
 
 class MongoReader(Reader):

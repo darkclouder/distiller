@@ -1,7 +1,7 @@
 import json
 
 from distiller.helpers.extend import extend
-from distiller.api.DynamicClass import DynamicClass
+from distiller.api.DynamicClass import DynamicClass, class_id
 
 
 def parameter_id(parameters):
@@ -12,6 +12,7 @@ def spirit_id_to_label(still_id, parameters):
     return "%s(%s)" % (still_id, parameter_id(parameters))
 
 
+@class_id("AbstractTask")
 class AbstractTask(DynamicClass):
     def __init__(self, parameters=None):
         self.manual_parameters = parameters
@@ -40,6 +41,9 @@ class AbstractTask(DynamicClass):
 
     def spirit_id(self):
         return self.name(), self.parameters
+
+    def parameter_id(self):
+        return parameter_id(self.parameters)
 
     def __repr__(self):
         return self.label()
@@ -89,7 +93,3 @@ class AbstractTask(DynamicClass):
         only use those to avoid side effects.
         """
         return []
-
-    @staticmethod
-    def class_id():
-        return "AbstractTask"

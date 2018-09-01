@@ -21,7 +21,7 @@ TODO!!!!! DISTILLER_CONF_FILE is not used any more
 The distiller loads the config file located at the position of the environment variable ``DISTILLER_CONF_FILE``, so
 either set this variable to the path of your config file globally or within your virtual environment.
 
-To specify an alternative path for the ``tasks`` folder that can be found in ``distiller/taks`` by default set the
+To specify an alternative path for the ``tasks`` folder that can be found in ``distiller/tasks`` by default set the
 environment variable ``DISTILLER_TASK_PATH``.
 
 `Note: If you use file-based data drivers make sure the data path set in the environment variable`
