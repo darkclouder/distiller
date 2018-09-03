@@ -20,6 +20,7 @@ def get_parser(program, conf, spirit=False, options=False):
     spirit_parser.add_argument(
         "--port",
         default=conf.get("remote.default.port"),
+        type=int,
         help="Port of core daemon, DEFAULT: %s (see config)" % conf.get("remote.default.port")
     )
 
@@ -96,6 +97,7 @@ def cask_delete_action(mode):
         spirit_parser.add_argument(
             "--port",
             default=conf.get("remote.default.port"),
+            type=int,
             help="Port of core daemon, DEFAULT: %s (see config)" % conf.get("remote.default.port")
         )
 

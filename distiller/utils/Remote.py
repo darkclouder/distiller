@@ -141,6 +141,16 @@ class Remote:
         if obj.get("error", None) is not None:
             raise RemoteError(obj["error"])
 
+    def fetch_worker_conf(self):
+        url = self.url_prefix + "config/accumulated/worker.json"
+
+        res = requests.get(url)
+
+        if res.status_code != 200:
+            raise NetworkError("%s: Status code %i" % (url, res.status_code))
+
+        return res.json()
+
 
 class NetworkError(Exception):
     pass

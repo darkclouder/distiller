@@ -6,6 +6,7 @@ import dateutil.parser
 from distiller.helpers.RequestHandler import RequestHandler
 from distiller.utils.PathFinder import PathFinder
 from distiller.utils.TaskLoader import TaskLoader
+from distiller.utils.Configuration import Configuration
 from distiller.core.interfaces.Scheduler import FinishState
 
 
@@ -15,6 +16,7 @@ class CoreHandler(RequestHandler):
 
         self.get("/healthcheck", self.healthcheck)
         self.get("/tasks/definitions.tar.gz", self.get_tasks)
+        self.get("/config/accumulated/worker.json", self.get_config("worker"))
         self.post("/tasks/run", self.run_next)
         self.post("/tasks/finish/(?P<transaction_id>[0-9]+)", self.finish)
         self.post("/tasks/heartbeat/(?P<transaction_id>[0-9]+)", self.heartbeat)
@@ -45,6 +47,18 @@ class CoreHandler(RequestHandler):
             os.remove(tmp_file)
         else:
             handle.error(404)
+
+    def get_config(self, mode):
+        def get(handle, params):
+            try:
+                conf = Configuration.load(mode)
+            except Exception as e:
+                handle.server.env.logger.claim("CoreHandler").error(e)
+                return handle.error(500)
+
+            handle.json(conf.conf_dict)
+
+        return get
 
     def run_next(self, handle, params, body):
         try:

@@ -13,12 +13,16 @@ from distiller.utils.PathFinder import PathFinder
 
 
 class Worker:
-    def __init__(self, host, port):
+    def __init__(self, host, port, auto_conf=False):
         self.remote = Remote(host, port)
 
-        # Load default driver
-        self.config = Configuration.load("worker")
+        if auto_conf:
+            self.config = self.__auto_conf()
+            self.remote = Remote(self.config.get("remote.default.ip"), self.config.get("remote.default.port"))
+        else:
+            self.config = Configuration.load("worker")
 
+        # Load default driver
         driver_module = importlib.import_module(self.config.get("spirits.default_driver.module"))
         self.default_driver = driver_module.module_class(**self.config.get("spirits.default_driver.params"))
 
@@ -47,6 +51,9 @@ class Worker:
             else:
                 # TODO: dynamic, wait_until
                 time.sleep(5)
+
+    def __auto_conf(self):
+        return Configuration(self.remote.fetch_worker_conf())
 
     def __request_job(self):
         try:
