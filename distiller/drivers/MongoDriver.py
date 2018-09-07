@@ -1,5 +1,7 @@
 from pymongo import MongoClient
 import json
+import hashlib
+import importlib
 
 from distiller.api.DataDriver import DataDriver
 from distiller.api.Reader import Reader, ReadIterator
@@ -20,7 +22,10 @@ class MongoDriver(DataDriver):
         return MongoWriteModes(self.__collection(spirit), self.__credentials(config))
 
     def __collection(self, spirit):
-        return self.kwargs.get("collection_prefix", "") + spirit.label()
+        label = spirit.label()
+
+        return (self.kwargs.get("collection_prefix", "") + label)[:50] + \
+            "_" + hashlib.sha256(label.encode("utf-8")).hexdigest()
 
     def __credentials(self, config):
         connection = self.kwargs.get("connection", config.get("drivers.settings.MongoDriver.default_connection"))
@@ -46,8 +51,18 @@ class MongoDriver(DataDriver):
 
         whitelisted = {}
 
+        # Load default driver
+        # TODO: this is a bad hack, somehow stored_in needs to figure
+        # out by itself what is the default driver, this also applies
+        # to GC and worker.
+        driver_module = importlib.import_module(config.get("spirits.default_driver.module"))
+        default_driver = driver_module.module_class(**config.get("spirits.default_driver.params"))
+
         for spirit in whitelist:
             driver = spirit.stored_in()
+
+            if driver is None:
+                driver = default_driver
 
             if driver.inherits("MongoDriver"):
                 connection_id = json.dumps(driver.__credentials(config), sort_keys=True)
@@ -60,6 +75,9 @@ class MongoDriver(DataDriver):
 
         connections = config.get("drivers.settings.MongoDriver.connections")
 
+        # TODO: don't drop system collections, are there more?
+        system_cols = ["system.indexes"]
+
         for connection in connections.values():
             connection_id = json.dumps(connection, sort_keys=True)
 
@@ -68,7 +86,9 @@ class MongoDriver(DataDriver):
             client = MongoClient(connection["uri"], connectTimeoutMS=5000)
             db = client[connection["database"]]
 
-            drop_collections = set(db.collection_names()).difference(whitelist_cols)
+            drop_collections = set(db.collection_names()) \
+                .difference(whitelist_cols) \
+                .difference(system_cols)
 
             for coll in drop_collections:
                 db.drop_collection(coll)

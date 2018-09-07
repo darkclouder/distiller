@@ -1,3 +1,5 @@
+import importlib
+
 from distiller.utils.DependencyExplorer import DependencyExplorer
 from distiller.utils.TaskLoader import TaskLoader
 
@@ -6,6 +8,10 @@ class GarbageCollector:
     def __init__(self, env):
         self.env = env
         self.logger = self.env.logger.claim("GC")
+
+        # Load default driver
+        driver_module = importlib.import_module(self.env.config.get("spirits.default_driver.module"))
+        self.default_driver = driver_module.module_class(**self.env.config.get("spirits.default_driver.params"))
 
     def delete_all(self, whitelist=None):
         if whitelist is None:
@@ -54,7 +60,12 @@ class GarbageCollector:
             if spirit in running_spirits:
                 raise ValueError("Cannot delete running spirit")
 
-            spirit.stored_in().delete_cask(spirit, self.env.config)
+            driver = spirit.stored_in()
+
+            if driver is None:
+                driver = self.default_driver
+
+            driver.delete_cask(spirit, self.env.config)
             self.env.meta.invalidate_cask(spirit.spirit_id())
 
     def delete_unused(self):

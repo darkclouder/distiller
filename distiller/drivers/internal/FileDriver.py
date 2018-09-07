@@ -2,6 +2,7 @@ import os
 import shutil
 import re
 import base64
+import hashlib
 
 from distiller.api.DataDriver import DataDriver
 from distiller.utils.PathFinder import PathFinder
@@ -19,16 +20,16 @@ class FileDriver(DataDriver):
             spirit.name(),
             task_root=config.get("drivers.settings.FileDriver.cask_path", path=True)
         )
-        parameter_id = self._simplify_file_name(spirit.parameter_id())
+        file_name = self._create_file_name(spirit.parameter_id())
 
         if create_path and not os.path.exists(task_path):
             os.makedirs(task_path)
 
-        return os.path.join(task_path, parameter_id)
+        return os.path.join(task_path, file_name)
 
-    def _simplify_file_name(self, name):
-        encoded_name = base64.b64encode(name.encode("utf-8")).decode("ascii")
-        return self.simplify_pattern.sub("_", name) + "_" + encoded_name
+    def _create_file_name(self, parameter_id):
+        return self.simplify_pattern.sub("_", parameter_id)[:50] + \
+            "_" + hashlib.sha256(parameter_id.encode("utf-8")).hexdigest()
 
     def delete_cask(self, spirit, config):
         data_path = self._get_data_path(spirit, config)
