@@ -16,10 +16,6 @@ class DefaultPipe(AbstractTask):
     def pipe_iterator(self, input_readers):
         raise NotImplementedError
 
-    def occurrences(self):
-        return sys.maxsize
-
-
 class PipeDriver(DataDriver):
     def delete_cask(self, spirit, config):
         raise ValueError("Pipe cannot be deleted")

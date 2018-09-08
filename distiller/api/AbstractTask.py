@@ -83,7 +83,7 @@ class AbstractTask(DynamicClass):
         For special cases, like general tasks that are reused or pipes, this value might be `sys.maxsize`.
         Attention: Only return something different than 1 if you know what you're doing!
         """
-        raise NotImplementedError
+        return 1
 
     def locks(self):
         """This returns a list of strings, each indicating an ID for a lock.

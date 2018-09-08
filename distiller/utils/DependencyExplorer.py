@@ -11,7 +11,16 @@ class DependencyExplorer:
         return list(cls.__explore(TaskLoader.init(target_spirit_id), {}, skip_pipes=skip_pipes)[0].keys())
 
     @classmethod
-    def __explore(cls, target_spirit, nodes, skip_pipes=True):
+    def __explore(cls, target_spirit, nodes, used_spirits=None, used_task_count=None, skip_pipes=True):
+        target_task_id = target_spirit.name()
+
+        if used_spirits is None:
+            used_spirits = set()
+
+        if used_task_count is None:
+            used_task_count = {}
+
+        # TODO: infinite loop detection is missing
         all_parents = set()
         all_roots = set()
 
@@ -19,10 +28,32 @@ class DependencyExplorer:
 
         curr = cls.__get_node(nodes, target_spirit)
 
+        if target_spirit in used_spirits:
+            raise CyclicDependencyException(target_spirit.spirit_id())
+
+        up_used_spirits = set(used_spirits)
+        up_used_spirits.add(target_spirit)
+
+        up_used_task_count = dict(used_task_count)
+
+        if target_task_id not in up_used_task_count:
+            up_used_task_count[target_task_id] = target_spirit.occurrences() - 1
+        else:
+            up_used_task_count[target_task_id] -= 1
+
+        if up_used_task_count[target_task_id] < 0:
+            raise CyclicDependencyException(target_task_id, task=True)
+
         for dep in target_spirit.requires():
             dep_spirit = TaskLoader.init(dep)
 
-            _, parents, roots = cls.__explore(dep_spirit, nodes, skip_pipes=skip_pipes)
+            _, parents, roots = cls.__explore(
+                dep_spirit,
+                nodes,
+                used_spirits=up_used_spirits,
+                used_task_count=up_used_task_count,
+                skip_pipes=skip_pipes
+            )
 
             all_parents.update(parents)
             all_roots.update(roots)
@@ -79,3 +110,13 @@ class DependencyNode:
 
     def __hash__(self):
         return hash(self.spirit)
+
+
+class CyclicDependencyException(Exception):
+    def __init__(self, identifier, task=False):
+        if task:
+            super().__init__(
+                "Cyclic dependency detected for %s. Check `AbstractTask.occurrences` to resolve this." % identifier
+            )
+        else:
+            super().__init__("Cyclic dependency detected for %s." % identifier)

@@ -7,7 +7,7 @@ class Still(DefaultStill):
     def stored_in(self):
         return CsvFileDriver(
             dict=True,
-            fields=["city", "lat", "lon", "name"],
+            fields=["city", "lat", "lon", "name", "website"],
             file_params={"encoding": "utf-8"}
         )
 

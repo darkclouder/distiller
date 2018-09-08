@@ -1,7 +1,7 @@
 import unittest
 
 from distiller.utils.TaskLoader import TaskLoader
-from distiller.utils.DependencyExplorer import DependencyExplorer, DependencyNode
+from distiller.utils.DependencyExplorer import DependencyExplorer, DependencyNode, CyclicDependencyException
 
 
 class TestDependencyExplorer(unittest.TestCase):
@@ -51,6 +51,24 @@ class TestDependencyExplorer(unittest.TestCase):
 
         full_graph = {_repr(root) for root in DependencyExplorer.build_graph(self.t11.spirit_id())}
         self.assertEqual(full_graph, {_repr(n2), _repr(n6), _repr(n8)})
+
+    def test_recursive(self):
+        r1 = TaskLoader.init(("testing.recursive_dependency", {"n": 10, "m": 1}))
+        r2 = TaskLoader.init(("testing.recursive_dependency", {"n": 4, "m": 5}))
+
+        with self.assertRaises(CyclicDependencyException):
+            DependencyExplorer.build_graph(r1.spirit_id())
+
+        self.assertEqual(len(DependencyExplorer.involved_spirits(r2.spirit_id())), 5)
+
+
+    def test_recursive_branches(self):
+        r2 = TaskLoader.init(("testing.recursive_dependency", {"n": 4, "m": 5}))
+        r3 = TaskLoader.init(("testing.parameter_requires", {"requires": [
+            r2.spirit_id(), r2.spirit_id()
+        ]}))
+
+        self.assertEqual(len(DependencyExplorer.involved_spirits(r3.spirit_id())), 6)
 
     def _get_roots(self, spirit):
         return {root.spirit for root in DependencyExplorer.build_graph(spirit.spirit_id())}
