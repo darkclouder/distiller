@@ -17,6 +17,9 @@ class SchedulingBacklog:
         Only for once instance of the daemon if persistent=False
         Or in the meta db if persistent=True"""
 
+        # TODO: persistent scheduler that simply assures that something is there but doesnt have to be updated
+        # TODO: would only be executed once, or when cask was deleted
+
         if (persistent or scheduling_info.reoccurring) and scheduling_info.age_requirement == 0:
             raise ValueError("Reoccurring target cannot have age requirement 0")
 
@@ -118,6 +121,8 @@ class SchedulingBacklog:
             age_td = datetime.timedelta(seconds=scheduling_info.age_requirement)
 
         # Perform BFS on dependency tree starting with `scheduling_info`
+        # TODO: this is not pipe compliant, fix that, best would be to use the DependencyExplorer for that
+
         queue = collections.deque()
         spirit = TaskLoader.init(scheduling_info.spirit_id)
 
@@ -149,14 +154,17 @@ class SchedulingBacklog:
             for dep in curr.requires():
                 queue.append(TaskLoader.init(dep))
 
-        pp_time = min_cask_dt + age_td - self.__predict_execution_time(spirit)
+        pp_date = min_cask_dt + age_td - self.__predict_execution_time(spirit)
 
         # Don't execute at all if age requirements are already met and this is neither
-        # reoccurring nor scheduled
-        if pp_time > min_date and not scheduling_info.reoccurring and scheduling_info.start_date is None:
+        # reoccurring nor would violate age requirement for a scheduled target at the scheduled datetime
+
+        if pp_date > min_date and not scheduling_info.reoccurring and (
+                scheduling_info.start_date is None or scheduling_info.start_date < pp_date
+        ):
             return None
 
-        return pp_time
+        return pp_date
 
     def __get_cask_datetime(self, target_spirit):
         cask_meta = self.env.meta.get_cask(target_spirit.spirit_id())

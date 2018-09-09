@@ -1,5 +1,3 @@
-import sys
-
 from distiller.api.DynamicClass import class_id
 from distiller.api.AbstractTask import AbstractTask
 from distiller.api.DataDriver import DataDriver
@@ -15,6 +13,7 @@ class DefaultPipe(AbstractTask):
 
     def pipe_iterator(self, input_readers):
         raise NotImplementedError
+
 
 class PipeDriver(DataDriver):
     def delete_cask(self, spirit, config):

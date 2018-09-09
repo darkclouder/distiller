@@ -1,3 +1,4 @@
+import sys
 from distiller.api.DefaultPipe import DefaultPipe
 
 
@@ -10,3 +11,6 @@ class Still(DefaultPipe):
 
     def requires(self):
         return self.parameters["requires"]
+
+    def occurrences(self):
+        return sys.maxsize

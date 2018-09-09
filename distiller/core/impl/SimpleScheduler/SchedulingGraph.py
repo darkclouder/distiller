@@ -137,7 +137,8 @@ class SchedulingGraph:
         """Abort a running spirit and stop all of its ancestors"""
 
         spirit = self.__stop_spirit(transaction_id)
-        self.branches = [branch for branch in self.branches if not branch.contains_spirit(spirit)]
+
+        self.branches = [branch for branch in self.branches if not branch.spirit_in_root(spirit)]
 
     def __stop_spirit(self, transaction_id):
         if transaction_id not in self.active_transactions:
@@ -243,6 +244,10 @@ class SchedulingBranch:
         assert len(self.spirits) >= len(self.roots)
 
         return len(self.spirits) == 0
+
+    def spirit_in_root(self, spirit):
+        return spirit in self.spirits and \
+               len([root.spirit for root in self.roots if root.spirit == spirit]) > 0
 
     def contains_spirit(self, spirit):
         return spirit in self.spirits

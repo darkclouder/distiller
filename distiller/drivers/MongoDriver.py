@@ -193,7 +193,7 @@ class MongoWriter(Writer):
     def __enter__(self):
         self.client = MongoClient(self.credentials["uri"])
 
-        if self.mode != "update":
+        if self.mode != "replace":
             self.client[self.credentials["database"]][self.collection].aggregate(
                 [{"$out": get_temp_collection(self.collection)}]
             )
