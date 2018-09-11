@@ -56,6 +56,14 @@ class TestSimpleScheduler(unittest.TestCase):
             "testing.parameter_requires",
             {"requires": [self.t1]}
         )
+        self.t3 = (
+            "testing.parameter_requires_pipe",
+            {"requires": [self.t2]}
+        )
+        self.t4 = (
+            "testing.parameter_requires",
+            {"requires": [self.t3]}
+        )
 
     def test_add_single(self):
         self.scheduler.add_target(self.t1)
@@ -63,19 +71,19 @@ class TestSimpleScheduler(unittest.TestCase):
 
     def test_add_with_dependency(self):
         self.scheduler.add_target(self.t2)
-        self.assertEqual(self.scheduler.time_until_next(), 0)
+        self.assertEqual(0, self.scheduler.time_until_next())
 
         transaction = self.scheduler.run_next()
         self.assertEqual(transaction["spirit_id"], self.t1)
-        self.assertEqual(self.scheduler.run_next(), None)
+        self.assertEqual(None, self.scheduler.run_next())
         self.scheduler.finish_spirit(transaction["transaction_id"])
 
         transaction = self.scheduler.run_next()
         self.assertEqual(transaction["spirit_id"], self.t2)
-        self.assertEqual(self.scheduler.run_next(), None)
+        self.assertEqual(None, self.scheduler.run_next())
         self.scheduler.finish_spirit(transaction["transaction_id"])
 
-        self.assertEqual(self.scheduler.run_next(), None)
+        self.assertEqual(None, self.scheduler.run_next())
 
     def test_add_after_dependency(self):
         self.scheduler.add_target(self.t1)
@@ -85,25 +93,47 @@ class TestSimpleScheduler(unittest.TestCase):
 
         transaction = self.scheduler.run_next()
         self.assertEqual(transaction["spirit_id"], self.t1)
-        self.assertEqual(self.scheduler.run_next(), None)
+        self.assertEqual(None, self.scheduler.run_next())
         self.scheduler.finish_spirit(transaction["transaction_id"])
 
         transaction = self.scheduler.run_next()
         self.assertEqual(transaction["spirit_id"], self.t2)
-        self.assertEqual(self.scheduler.run_next(), None)
+        self.assertEqual(None, self.scheduler.run_next())
         self.scheduler.finish_spirit(transaction["transaction_id"])
 
-        self.assertEqual(self.scheduler.run_next(), None)
+        self.assertEqual(None, self.scheduler.run_next())
+
+    def test_pipes(self):
+        self.scheduler.add_target(self.t4)
+
+        self.assertEqual(0, self.scheduler.time_until_next())
+
+        transaction = self.scheduler.run_next()
+        self.assertEqual(self.t1, transaction["spirit_id"])
+        self.assertEqual(None, self.scheduler.run_next())
+        self.scheduler.finish_spirit(transaction["transaction_id"])
+
+        transaction = self.scheduler.run_next()
+        self.assertEqual(self.t2, transaction["spirit_id"])
+        self.assertEqual(None, self.scheduler.run_next())
+        self.scheduler.finish_spirit(transaction["transaction_id"])
+
+        transaction = self.scheduler.run_next()
+        self.assertEqual(self.t4, transaction["spirit_id"])
+        self.assertEqual(None, self.scheduler.run_next())
+        self.scheduler.finish_spirit(transaction["transaction_id"])
+
+        self.assertEqual(None, self.scheduler.run_next())
 
     def test_error_execution(self):
         self.scheduler.add_target(self.t1)
 
         transaction = self.scheduler.run_next()
         self.assertEqual(transaction["spirit_id"], self.t1)
-        self.assertEqual(self.scheduler.run_next(), None)
+        self.assertEqual(None, self.scheduler.run_next())
         self.scheduler.finish_spirit(transaction["transaction_id"], finish_state=FinishState.EXEC_ERROR)
 
-        self.assertEqual(self.scheduler.run_next(), None)
+        self.assertEqual(None, self.scheduler.run_next())
         self.assertTrue(self.scheduler.graph.is_empty())
 
     def test_multi_abort(self):

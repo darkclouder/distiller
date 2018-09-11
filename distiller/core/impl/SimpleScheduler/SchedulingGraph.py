@@ -2,6 +2,7 @@ import collections
 import datetime
 
 from distiller.utils.DependencyExplorer import DependencyExplorer
+from distiller.utils.TaskLoader import TaskLoader
 
 
 class SchedulingGraph:
@@ -28,48 +29,25 @@ class SchedulingGraph:
 
         now = datetime.datetime.now()
 
-        # Build up complete execution tree
-        # This has to be done to guarantee all age requirements
-        # Otherwise it could be that for A -> B -> C the age requirement for B is met and for A is not
-        # If I don't add B to the dependencies to be executed since its age requirement is met
-        # then A and B will never be updated although A does not match the age requirement any more
-        # Therefore the complete execution tree is built up first and then from top down
-        # All roots are removed that fulfill the age requirements until none fulfills it
+        # Build execution graph and prune from the leaves all spirits where
+        # a results exists and the age requirements are still met
 
-        roots = DependencyExplorer.build_graph(scheduling_info.spirit_id)
+        def prune_fulfilled(spirit):
+            cask_dt = self.__get_cask_datetime(spirit)
 
-        # Remove cached results satisfying age requirements from execution tree
-        fixed_roots = []
+            return not TaskLoader.spirit_is_pipe(spirit) and cask_dt is not None and (
+                    scheduling_info.age_requirement is None or
+                    cask_dt + datetime.timedelta(seconds=scheduling_info.age_requirement) >= now
+            )
 
-        while len(roots) > 0:
-            # New roots in each reduction step
-            # This has to be a set because maybe two children have both the same root as a
-            # dependency, but it should only be considered once
-            new_roots = set()
-
-            for root in roots:
-                cask_dt = self.__get_cask_datetime(root.spirit)
-
-                if cask_dt is None or (
-                    scheduling_info.age_requirement is not None and
-                    cask_dt + datetime.timedelta(seconds=scheduling_info.age_requirement) < now
-                ):
-                    # Root does not satisfy age requirements, keep it
-                    fixed_roots.append(root)
-                else:
-                    # Root satisfies age requirement, it can be removed from all children
-                    # having this dependency
-                    # And the children instead are now the next roots that would be executed next
-                    # (if they don't meet the age requirement yet)
-
-                    for child in root.children:
-                        child.remove_parent(root)
-                        new_roots.add(child)
-
-            roots = list(new_roots)
+        roots = DependencyExplorer.build_graph(
+            scheduling_info.spirit_id,
+            prune_func=prune_fulfilled
+        )
 
         # Add (reduced) execution branch to list of branches
-        self.branches.append(SchedulingBranch(scheduling_info, fixed_roots))
+        self.branches.append(SchedulingBranch(scheduling_info, roots))
+        self.__sort_branches()
 
     def __predict_execution_time(self, spirit):
         """Returns a timedelta for the predicted execution time """
@@ -167,8 +145,6 @@ class SchedulingGraph:
         """Returns the next possible spirit to execute
         Returns None if there is no candidate"""
 
-        self.branches = sorted(self.branches, key=lambda b: b.scheduling_info.priority, reverse=True)
-
         for branch in self.branches:
             for root in branch.roots:
                 if root.spirit not in self.running_spirits and not self.__is_locked(root.spirit):
@@ -193,6 +169,8 @@ class SchedulingGraph:
 
         return False
 
+    def __sort_branches(self):
+        self.branches = sorted(self.branches, key=lambda b: b.scheduling_info.priority, reverse=True)
 
 class SchedulingBranch:
     def __init__(self, scheduling_info, roots):

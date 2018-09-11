@@ -3,15 +3,20 @@ from distiller.utils.TaskLoader import TaskLoader
 
 class DependencyExplorer:
     @classmethod
-    def build_graph(cls, target_spirit_id, skip_pipes=True):
-        return cls.__explore(TaskLoader.init(target_spirit_id), {}, skip_pipes=skip_pipes)[2]
+    def build_graph(cls, target_spirit_id, skip_pipes=True, **kwargs):
+        return cls.__explore(TaskLoader.init(target_spirit_id), {}, skip_pipes=skip_pipes, **kwargs)[2]
 
     @classmethod
-    def involved_spirits(cls, target_spirit_id, skip_pipes=True):
-        return list(cls.__explore(TaskLoader.init(target_spirit_id), {}, skip_pipes=skip_pipes)[0].keys())
+    def involved_spirits(cls, target_spirit_id, skip_pipes=True, **kwargs):
+        return list(cls.__explore(TaskLoader.init(target_spirit_id), {}, skip_pipes=skip_pipes, **kwargs)[0].keys())
 
     @classmethod
-    def __explore(cls, target_spirit, nodes, used_spirits=None, used_task_count=None, skip_pipes=True):
+    def __explore(cls, target_spirit, nodes, used_spirits=None, used_task_count=None, skip_pipes=True, **kwargs):
+        if "prune_func" in kwargs:
+            prune_func = kwargs["prune_func"]
+        else:
+            prune_func = None
+
         target_task_id = target_spirit.name()
 
         if used_spirits is None:
@@ -20,7 +25,6 @@ class DependencyExplorer:
         if used_task_count is None:
             used_task_count = {}
 
-        # TODO: infinite loop detection is missing
         all_parents = set()
         all_roots = set()
 
@@ -46,6 +50,11 @@ class DependencyExplorer:
 
         for dep in target_spirit.requires():
             dep_spirit = TaskLoader.init(dep)
+
+            if prune_func is not None:
+                if prune_func(dep_spirit):
+                    print("Prune %s" % dep_spirit)
+                    continue
 
             _, parents, roots = cls.__explore(
                 dep_spirit,
