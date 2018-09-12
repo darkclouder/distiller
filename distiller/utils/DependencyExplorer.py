@@ -4,8 +4,8 @@ from distiller.utils.TaskLoader import TaskLoader
 class DependencyExplorer:
     @classmethod
     def build_graph(cls, target_spirit_id, skip_pipes=True, **kwargs):
-        return cls.__explore(TaskLoader.init(
-            target_spirit_id),
+        return cls.__explore(
+            TaskLoader.init(target_spirit_id),
             {},
             skip_pipes=skip_pipes,
             **kwargs

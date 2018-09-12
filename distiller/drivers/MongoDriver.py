@@ -2,6 +2,7 @@ from pymongo import MongoClient, ReplaceOne
 import json
 import hashlib
 import importlib
+import re
 
 from distiller.api.DataDriver import DataDriver
 from distiller.api.Reader import Reader, ReadIterator
@@ -12,6 +13,8 @@ from distiller.drivers.internal.RowToBlobIterator import RowToBlobIterator
 
 @class_id("MongoDriver")
 class MongoDriver(DataDriver):
+    simplify_pattern = re.compile("[^a-zA-Z0-9-_.()]+")
+
     def __init__(self, **kwargs):
         self.kwargs = kwargs
 
@@ -31,9 +34,11 @@ class MongoDriver(DataDriver):
 
     def __collection(self, spirit):
         label = spirit.label()
+        simple_label = self.simplify_pattern.sub("", label)
 
-        return (self.kwargs.get("collection_prefix", "") + label)[:50] + \
-            "_" + hashlib.sha256(label.encode("utf-8")).hexdigest()
+        return (
+            self.kwargs.get("collection_prefix", "") + simple_label
+        )[:35] + "_" + hashlib.sha256(label.encode("utf-8")).hexdigest()
 
     def __credentials(self, config):
         if "credentials" in self.kwargs:
@@ -86,9 +91,6 @@ class MongoDriver(DataDriver):
 
         connections = config.get("drivers.settings.MongoDriver.connections")
 
-        # TODO: don't drop system collections, are there more?
-        system_cols = ["system.indexes"]
-
         for connection in connections.values():
             connection_id = json.dumps(connection, sort_keys=True)
 
@@ -97,9 +99,9 @@ class MongoDriver(DataDriver):
             client = MongoClient(connection["uri"], connectTimeoutMS=5000)
             db = client[connection["database"]]
 
-            drop_collections = set(db.collection_names()) \
-                .difference(whitelist_cols) \
-                .difference(system_cols)
+            drop_collections = set(
+                db.collection_names(include_system_collections=False)
+            ).difference(whitelist_cols)
 
             for coll in drop_collections:
                 db.drop_collection(coll)
@@ -238,12 +240,13 @@ class MongoWriter(Writer):
     def __enter__(self):
         self.client = MongoClient(self.credentials["uri"])
 
-        if self.mode != "replace":
-            self.client[self.credentials["database"]][self.collection].aggregate(
-                [{"$out": get_temp_collection(self.collection)}]
-            )
+        temp_col = get_temp_collection(self.collection)
+        db = self.client[self.credentials["database"]]
 
-        self.write_coll = self.client[self.credentials["database"]][get_temp_collection(self.collection)]
+        if self.mode != "replace":
+            db[self.collection].aggregate([{"$out": temp_col}])
+
+        self.write_coll = db[temp_col]
 
         return self
 
