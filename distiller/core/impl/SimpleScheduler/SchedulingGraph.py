@@ -172,6 +172,7 @@ class SchedulingGraph:
     def __sort_branches(self):
         self.branches = sorted(self.branches, key=lambda b: b.scheduling_info.priority, reverse=True)
 
+
 class SchedulingBranch:
     def __init__(self, scheduling_info, roots):
         self.scheduling_info = scheduling_info

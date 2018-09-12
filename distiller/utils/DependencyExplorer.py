@@ -4,14 +4,32 @@ from distiller.utils.TaskLoader import TaskLoader
 class DependencyExplorer:
     @classmethod
     def build_graph(cls, target_spirit_id, skip_pipes=True, **kwargs):
-        return cls.__explore(TaskLoader.init(target_spirit_id), {}, skip_pipes=skip_pipes, **kwargs)[2]
+        return cls.__explore(TaskLoader.init(
+            target_spirit_id),
+            {},
+            skip_pipes=skip_pipes,
+            **kwargs
+        )[2]
 
     @classmethod
     def involved_spirits(cls, target_spirit_id, skip_pipes=True, **kwargs):
-        return list(cls.__explore(TaskLoader.init(target_spirit_id), {}, skip_pipes=skip_pipes, **kwargs)[0].keys())
+        return list(cls.__explore(
+            TaskLoader.init(target_spirit_id),
+            {},
+            skip_pipes=skip_pipes,
+            **kwargs
+        )[0].keys())
 
     @classmethod
-    def __explore(cls, target_spirit, nodes, used_spirits=None, used_task_count=None, skip_pipes=True, **kwargs):
+    def __explore(
+            cls,
+            target_spirit,
+            nodes,
+            used_spirits=None,
+            used_task_count=None,
+            skip_pipes=True,
+            **kwargs
+    ):
         if "prune_func" in kwargs:
             prune_func = kwargs["prune_func"]
         else:
@@ -53,7 +71,6 @@ class DependencyExplorer:
 
             if prune_func is not None:
                 if prune_func(dep_spirit):
-                    print("Prune %s" % dep_spirit)
                     continue
 
             _, parents, roots = cls.__explore(
@@ -61,7 +78,8 @@ class DependencyExplorer:
                 nodes,
                 used_spirits=up_used_spirits,
                 used_task_count=up_used_task_count,
-                skip_pipes=skip_pipes
+                skip_pipes=skip_pipes,
+                **kwargs
             )
 
             all_parents.update(parents)

@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, ReplaceOne
 import json
 import hashlib
 import importlib
@@ -16,10 +16,18 @@ class MongoDriver(DataDriver):
         self.kwargs = kwargs
 
     def read(self, spirit, config):
-        return MongoReader(self.__collection(spirit), self.__credentials(config))
+        return MongoReader(
+            self.__collection(spirit),
+            self.__credentials(config),
+            **self.kwargs
+        )
 
     def write(self, spirit, config):
-        return MongoWriteModes(self.__collection(spirit), self.__credentials(config))
+        return MongoWriteModes(
+            self.__collection(spirit),
+            self.__credentials(config),
+            **self.kwargs
+        )
 
     def __collection(self, spirit):
         label = spirit.label()
@@ -28,6 +36,9 @@ class MongoDriver(DataDriver):
             "_" + hashlib.sha256(label.encode("utf-8")).hexdigest()
 
     def __credentials(self, config):
+        if "credentials" in self.kwargs:
+            return self.kwargs["credentials"]
+
         connection = self.kwargs.get("connection", config.get("drivers.settings.MongoDriver.default_connection"))
         return config.get("drivers.settings.MongoDriver.connections.%s" % connection)
 
@@ -97,7 +108,7 @@ class MongoDriver(DataDriver):
 
 
 class MongoReader(Reader):
-    def __init__(self, collection, credentials):
+    def __init__(self, collection, credentials, **kwargs):
         self.collection = collection
         self.credentials = credentials
 
@@ -135,22 +146,39 @@ class RowIterator(ReadIterator):
 
 
 class MongoWriteModes(WriteModes):
-    def __init__(self, collection, credentials):
+    def __init__(self, collection, credentials, **kwargs):
         self.collection = collection
         self.credentials = credentials
+        self.kwargs = kwargs
 
     def replace(self):
-        return MongoWriter("replace", self.collection, self.credentials)
+        return MongoWriter(
+            "replace",
+            self.collection,
+            self.credentials,
+            **self.kwargs
+        )
 
     def update(self, key):
-        return MongoWriter("update", self.collection, self.credentials, key)
+        return MongoWriter(
+            "update",
+            self.collection,
+            self.credentials,
+            key=key,
+            **self.kwargs
+        )
 
     def append(self):
-        return MongoWriter("append", self.collection, self.credentials)
+        return MongoWriter(
+            "append",
+            self.collection,
+            self.credentials,
+            **self.kwargs
+        )
 
 
 class MongoWriter(Writer):
-    def __init__(self, mode, collection, credentials, key=None):
+    def __init__(self, mode, collection, credentials, key=None, **kwargs):
         self.committed = False
         self.mode = mode
         self.collection = collection
@@ -159,27 +187,44 @@ class MongoWriter(Writer):
         self.client = None
         self.write_coll = None
 
+        self.bulk_size = kwargs.get("bulk_size", 100)
+        self.cached_rows = []
+
         if key is None and mode == "update":
             raise ValueError("Key cannot be None in update mode")
 
     def write(self, data):
         """Write a relational entry, or an entire blob"""
 
-        data = data.copy()
-
         if self.committed:
             raise WriteAfterCommitException
 
+        data = data.copy()
+
+        self.cached_rows.append(data)
+
+        if len(self.cached_rows) >= self.bulk_size:
+            self.__write_bulk()
+
+    def __write_bulk(self):
         if self.mode == "update":
-            self.write_coll.replace_one({self.key: data[self.key]}, data, True)
+            self.write_coll.bulk_write([
+                ReplaceOne({self.key: row[self.key]}, row, upsert=True)
+                for row in self.cached_rows
+            ])
         else:
-            self.write_coll.insert_one(data)
+            self.write_coll.insert_many(self.cached_rows, ordered=True)
+
+        self.cached_rows = []
 
     def commit(self):
         """Commits the change. Write operations after this lead to an error"""
 
         if self.committed:
             raise WriteAfterCommitException
+
+        if len(self.cached_rows) > 0:
+            self.__write_bulk()
 
         self.committed = True
 
