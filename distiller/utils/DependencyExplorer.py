@@ -25,15 +25,15 @@ class DependencyExplorer:
         if used_task_count is None:
             used_task_count = {}
 
+        if target_spirit in used_spirits:
+            raise CyclicDependencyException(target_spirit.spirit_id())
+
         all_parents = set()
         all_roots = set()
 
         skip = skip_pipes and TaskLoader.spirit_is_pipe(target_spirit)
 
         curr = cls.__get_node(nodes, target_spirit)
-
-        if target_spirit in used_spirits:
-            raise CyclicDependencyException(target_spirit.spirit_id())
 
         up_used_spirits = set(used_spirits)
         up_used_spirits.add(target_spirit)
@@ -53,7 +53,6 @@ class DependencyExplorer:
 
             if prune_func is not None:
                 if prune_func(dep_spirit):
-                    print("Prune %s" % dep_spirit)
                     continue
 
             _, parents, roots = cls.__explore(

@@ -137,7 +137,7 @@ context = CliContext(
             }
         ),
         "cask": CliContext("Remote access to spirit casks", sub_contexts={
-                "remove": CliContext("Delete one/many casks to reduce disk usage", sub_contexts={
+                "delete": CliContext("Delete one/many casks to reduce disk usage", sub_contexts={
                     "spirit": CliContext("Delete cask of a single spirit", cask_delete_action("spirit")),
                     "corrupt": CliContext(
                         "Delete all casks with missing or corrupt still definition or corrupt meta info",

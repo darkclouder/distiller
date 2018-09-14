@@ -6,8 +6,10 @@ import hashlib
 
 from distiller.api.DataDriver import DataDriver
 from distiller.utils.PathFinder import PathFinder
+from distiller.api.DynamicClass import class_id
 
 
+@class_id("FileDriver")
 class FileDriver(DataDriver):
     cask_pattern = re.compile("[a-zA-Z0-9-_.]+\([a-zA-Z0-9-_.]*\)_([A-Za-z0-9+/=]+)")
     simplify_pattern = re.compile("[^a-zA-Z0-9-_.()]+")

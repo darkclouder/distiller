@@ -24,3 +24,7 @@ class DynamicClass:
                 return True
 
         return False
+
+    @classmethod
+    def is_instance(cls, instance):
+        return cls.class_id() == instance.class_id()

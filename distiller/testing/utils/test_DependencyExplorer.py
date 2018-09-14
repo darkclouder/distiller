@@ -24,6 +24,20 @@ class TestDependencyExplorer(unittest.TestCase):
             {"requires": [self.t5.spirit_id(), self.t9.spirit_id(), self.t10.spirit_id()], "id": 11}
         ))
 
+        self.ua = TaskLoader.init(("testing.parameter_requires", {"requires": [], "id": "A"}))
+        self.ub = TaskLoader.init(("testing.parameter_requires", {"requires": [], "id": "B"}))
+        self.uc = TaskLoader.init(("testing.parameter_requires", {"requires": [], "id": "C"}))
+        self.up1 = TaskLoader.init((
+            "testing.parameter_requires_pipe",
+            {"requires": [self.ua.spirit_id(), self.ub.spirit_id()], "id": "P1"}
+        ))
+        self.up2 = TaskLoader.init((
+            "testing.parameter_requires_pipe",
+            {"requires": [self.up1.spirit_id(), self.uc.spirit_id()], "id": "P2"}
+        ))
+        self.ud = TaskLoader.init(("testing.parameter_requires", {"requires": [self.up2.spirit_id()], "id": "D"}))
+
+
     def test_single_branch(self):
         self.assertEqual(self._get_roots(self.t1), set())
         self.assertEqual(self._get_roots(self.t2), {self.t2})
@@ -50,7 +64,22 @@ class TestDependencyExplorer(unittest.TestCase):
         n10.add_parent(n6)
 
         full_graph = {_repr(root) for root in DependencyExplorer.build_graph(self.t11.spirit_id())}
-        self.assertEqual(full_graph, {_repr(n2), _repr(n6), _repr(n8)})
+        self.assertEqual({_repr(n2), _repr(n6), _repr(n8)}, full_graph)
+
+    def test_example_thesis_skipped_pipes(self):
+        full_graph = DependencyExplorer.build_graph(self.ud.spirit_id())
+
+        na = DependencyNode(self.ua)
+        nb = DependencyNode(self.ub)
+        nc = DependencyNode(self.uc)
+        nd = DependencyNode(self.ud)
+
+        nd.add_parent(na).add_parent(nb).add_parent(nc)
+
+        self.assertEqual(
+            {_repr(na), _repr(nb), _repr(nc)},
+            {_repr(root) for root in full_graph}
+        )
 
     def test_recursive(self):
         r1 = TaskLoader.init(("testing.recursive_dependency", {"n": 10, "m": 1}))
@@ -75,7 +104,7 @@ class TestDependencyExplorer(unittest.TestCase):
 
 
 def _repr(curr):
-    rep = "%i" % curr.spirit.parameters["id"]
+    rep = "%s" % str(curr.spirit.parameters["id"])
 
     if len(curr.children) > 0:
 

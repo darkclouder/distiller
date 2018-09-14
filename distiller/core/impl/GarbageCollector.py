@@ -25,13 +25,30 @@ class GarbageCollector:
                 whitelist.update(set(self.__running_spirits()))
 
             whitelist_labels = {spirit.label() for spirit in whitelist}
+            driver_whitelists = {driver.class_id(): [] for driver in self.env.drivers}
+
+            for spirit in whitelist:
+                driver = spirit.stored_in()
+
+                if driver is None:
+                    driver = self.default_driver
+
+                driver_id = driver.class_id()
+
+                if driver_id in driver_whitelists:
+                    driver_whitelists[driver_id].append(spirit)
+                else:
+                    self.logger.warning(
+                        "Driver %s (class id %s) is not loaded by the system, but used by the spirit %s" %
+                        (str(driver), driver.class_id(), str(spirit))
+                    )
 
             # # Delete actual cask data
             for driver in self.env.drivers:
                 self.logger.notice("Delete casks for driver %s" % repr(driver))
 
                 with self.logger.catch(Exception).warning():
-                    driver.delete_all_casks(self.env.config, whitelist=whitelist)
+                    driver.delete_all_casks(self.env.config, whitelist=driver_whitelists[driver.class_id()])
 
             # # Delete meta about cask
             cask_spirits = self.__cask_spirits()
