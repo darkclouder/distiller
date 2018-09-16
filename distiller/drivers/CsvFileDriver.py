@@ -156,11 +156,12 @@ class UpdateCsvFileWriter(Writer):
         self.key = key
         self.kwargs = kwargs
         self.committed = False
-        self.file = None
-        self.writer = None
 
-        self.columns = []
+        self.columns = {}
         self.key_index = {}
+
+        if not self.kwargs.get("dict", False):
+            raise ValueError("Update mode can only be used with dict=True")
 
     def write(self, data):
         if self.committed:
@@ -169,8 +170,9 @@ class UpdateCsvFileWriter(Writer):
         if data[self.key] in self.key_index:
             self.columns[self.key_index[data[self.key]]] = data
         else:
-            self.key_index[data[self.key]] = len(self.columns)
-            self.columns.append(data)
+            new_index = len(self.key_index)
+            self.key_index[data[self.key]] = new_index
+            self.columns[new_index] = data
 
     def commit(self):
         """Commits the change. Write operations after this lead to an error"""
@@ -178,34 +180,50 @@ class UpdateCsvFileWriter(Writer):
         if self.committed:
             raise WriteAfterCommitException
 
-        self.file = open(self.file_path, "w", **self.kwargs.get("file_params", {}))
+        temp_path = get_temp_path(self.file_path)
 
-        self.writer = csv.DictWriter(
-            self.file,
-            self.kwargs.get("fields", {}),
-            **self.kwargs.get("csv_params", {})
-        )
-        self.writer.writeheader()
+        with open(temp_path, "w", **self.kwargs.get("file_params", {})) as file:
+            writer = csv.DictWriter(
+                file,
+                self.kwargs.get("fields", {}),
+                **self.kwargs.get("csv_params", {})
+            )
 
-        # TODO FIXME: this doesn't really only update the edited values?!
-        # Only replace those rows that have been updated and remove those where the value has been updated to None
-        # Answer: yes, it does, since it keeps ALL columns. This seems rather useless
-        # How about only store the changes in memory and update rows where needed
+            writer.writeheader()
 
-        for column in self.columns:
-            self.writer.writerow(column)
+            first_new = 0
+
+            if os.path.exists(self.file_path):
+                with open(self.file_path) as f:
+                    reader = csv.DictReader(f, **self.kwargs.get("csv_params", {}))
+
+                    idx = 0
+
+                    for row in reader:
+                        column = self.columns.get(idx, row)
+
+                        if column is not None:
+                            writer.writerow(column)
+
+                        idx += 1
+
+                    first_new = idx
+
+            # Write all new columns
+            for _, column in sorted([
+                (idx, data) for idx, data in self.columns.items() if idx >= first_new
+            ], key=lambda x: x[0]):
+                writer.writerow(column)
+
+        shutil.move(temp_path, self.file_path)
 
     def __enter__(self):
         if os.path.exists(self.file_path):
             with open(self.file_path) as f:
                 reader = csv.DictReader(f, **self.kwargs.get("csv_params", {}))
-                i = 0
 
-                for row in reader:
+                for i, row in enumerate(reader):
                     self.key_index[row[self.key]] = i
-                    self.columns.append(row)
-
-                    i += 1
 
         return self
 

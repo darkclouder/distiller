@@ -60,6 +60,7 @@ class Watchdog:
                         next_timeout = item.value
                         break
 
+            # This is done after the loop of the queue to not interfere with the iteration
             for transaction_id in remove_ids:
                 self.remove(transaction_id)
 
