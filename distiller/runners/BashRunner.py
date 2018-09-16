@@ -34,9 +34,9 @@ class BashRunner(Runner):
         script_path = os.path.join(task_dir, self.script_file)
 
         if self.mode == "replace":
-            w = output_writer.replace().open()
+            write_mode = output_writer.replace()
         elif self.mode == "append":
-            w = output_writer.append().open()
+            write_mode = output_writer.append()
         else:
             raise ValueError("Invalid mode '%s'" % self.mode)
 
@@ -59,22 +59,20 @@ class BashRunner(Runner):
             except BrokenPipeError:
                 pass
 
-            pipe_reader.close()
-
-        w.write(p.stdout.read())
-
-        error_msg += p.stderr.read().decode('ascii')
-
-        exit_code = p.wait()
-
-        if exit_code == 0:
-            w.commit()
-        else:
-            raise ChildProcessError(error_msg)
-
-        w.close()
-
         for reader in file_readers:
             reader.close()
 
+        with write_mode as w:
+            for line in iter(p.stdout.readline, b''):
+                w.write(line)
+
+            error_msg += p.stderr.read().decode('ascii')
+            exit_code = p.wait()
+
+            if exit_code == 0:
+                w.commit()
+
         shutil.rmtree(input_dir)
+
+        if exit_code != 0:
+            raise ChildProcessError(error_msg)

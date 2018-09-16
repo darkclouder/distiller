@@ -9,4 +9,4 @@ cat $1
 
 (>&2 echo "This is a test error")
 
-exit 1
+#exit 1
