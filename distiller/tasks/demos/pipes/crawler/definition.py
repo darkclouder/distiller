@@ -43,6 +43,9 @@ class CrawlerPipe(DefaultPipe):
                                 print(e)
 
                         if res is not None and res.status_code == 200:
-                            yield {"text": res.text}
+                            yield {
+                                "meta": row,
+                                "text": res.text
+                            }
 
         return it

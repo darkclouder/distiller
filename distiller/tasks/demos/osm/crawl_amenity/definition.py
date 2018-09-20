@@ -17,7 +17,7 @@ class Still(DefaultStill):
         return PythonRunner(do)
 
     def default_parameters(self):
-        return {"city": "Berlin"}
+        return {"city": "Berlin", "amenity": "restaurant"}
 
     def locks(self):
         return ["osm"]
@@ -25,12 +25,17 @@ class Still(DefaultStill):
 
 def do(parameters, input_readers, output_writer):
     api = overpass.API()
-    res = api.Get('area[name="%s"]; node(area)[amenity=bar];' % parameters.get("city", ""))
+    res = api.Get(
+        'area[name="%s"]; node(area)[amenity=%s];' % (
+            parameters["city"],
+            parameters["amenity"]
+        )
+    )
 
     with output_writer.replace() as writer:
-        for bar in res.get("features", []):
-            lat, lon = bar.get("geometry", {}).get("coordinates", (None, None))
-            properties = bar.get("properties", {})
+        for amenity in res.get("features", []):
+            lat, lon = amenity.get("geometry", {}).get("coordinates", (None, None))
+            properties = amenity.get("properties", {})
 
             writer.write({
                 "lat": lat,
