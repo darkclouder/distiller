@@ -6,20 +6,20 @@ from distiller.api.DefaultPipe import DefaultPipe
 class CrawlerPipe(DefaultPipe):
     def default_parameters(self):
         return {
-            "still_urls": None,
+            "spirit_urls": None,
             "url_field": None
         }
 
     def requires(self):
-        if self.parameters["still_urls"] is None:
+        if self.parameters["spirit_urls"] is None:
             return []
         else:
-            return [self.parameters["still_urls"]]
+            return [self.parameters["spirit_urls"]]
 
     def pipe_iterator(self, input_readers):
         url_field = self.parameters["url_field"]
 
-        if self.parameters["still_urls"] is None:
+        if self.parameters["spirit_urls"] is None:
             def it():
                 pass
         else:

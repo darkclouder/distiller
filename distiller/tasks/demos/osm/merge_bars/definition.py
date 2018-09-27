@@ -19,7 +19,7 @@ class Still(DefaultStill):
 
     def requires(self):
         return [
-            ("demos.osm.crawl_amenity", {"city": city, "amenity": "bar"})
+            ("demos.osm.get_amenity", {"city": city, "amenity": "bar"})
             for city in self.parameters.get("cities", [])
         ]
 

@@ -157,7 +157,7 @@ class UpdateCsvFileWriter(Writer):
         self.kwargs = kwargs
         self.committed = False
 
-        self.columns = {}
+        self.rows = {}
         self.key_index = {}
 
         if not self.kwargs.get("dict", False):
@@ -168,11 +168,11 @@ class UpdateCsvFileWriter(Writer):
             raise WriteAfterCommitException
 
         if data[self.key] in self.key_index:
-            self.columns[self.key_index[data[self.key]]] = data
+            self.rows[self.key_index[data[self.key]]] = data
         else:
             new_index = len(self.key_index)
             self.key_index[data[self.key]] = new_index
-            self.columns[new_index] = data
+            self.rows[new_index] = data
 
     def commit(self):
         """Commits the change. Write operations after this lead to an error"""
@@ -200,7 +200,7 @@ class UpdateCsvFileWriter(Writer):
                     idx = 0
 
                     for row in reader:
-                        column = self.columns.get(idx, row)
+                        column = self.rows.get(idx, row)
 
                         if column is not None:
                             writer.writerow(column)
@@ -211,7 +211,7 @@ class UpdateCsvFileWriter(Writer):
 
             # Write all new columns
             for _, column in sorted([
-                (idx, data) for idx, data in self.columns.items() if idx >= first_new
+                (idx, data) for idx, data in self.rows.items() if idx >= first_new
             ], key=lambda x: x[0]):
                 writer.writerow(column)
 
@@ -228,7 +228,7 @@ class UpdateCsvFileWriter(Writer):
         return self
 
     def __exit__(self, type, value, traceback):
-        self.columns = None
+        self.rows = None
         self.key_index = None
 
 
