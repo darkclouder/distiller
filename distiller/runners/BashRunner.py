@@ -8,12 +8,23 @@ from distiller.api.Runner import Runner
 
 
 class BashRunner(Runner):
-    def __init__(self, script_file, pipe_dependency=None, mode="replace"):
-        self.pipe_dependency = pipe_dependency
+    def __init__(self, script_file, **kwargs):
         self.script_file = script_file
-        self.mode = mode
+        self.pipe_dependency = kwargs.get("pipe_dependency", None)
+        self.mode = kwargs.get("mode", "replace")
+
+        self.deserialize = kwargs.get("deserialize", "no") # no, json
 
     def run(self, task_dir, parameters, input_readers, output_writer):
+        if self.deserialize == "no":
+            def deserialize(data):
+                return data
+        elif self.deserialize == "json":
+            def deserialize(data):
+                return json.loads(data)
+        else:
+            raise ValueError("Unknown serialization mode")
+
         file_readers = [
             input_reader.blob().open()
             for i, input_reader in enumerate(input_readers)
@@ -64,7 +75,7 @@ class BashRunner(Runner):
 
         with write_mode as w:
             for line in iter(p.stdout.readline, b''):
-                w.write(line)
+                w.write(deserialize(line))
 
             error_msg += p.stderr.read().decode('ascii')
             exit_code = p.wait()

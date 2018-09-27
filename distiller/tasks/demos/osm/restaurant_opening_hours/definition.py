@@ -22,7 +22,7 @@ class Still(DefaultStill):
         return [(
             "demos.pipes.crawler",
             {
-                "still_urls": ("demos.osm.get_amenity", {
+                "spirit_urls": ("demos.osm.get_amenity", {
                     "city": self.parameters["city"],
                     "amenity": "restaurant"
                 }),

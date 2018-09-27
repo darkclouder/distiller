@@ -3,6 +3,7 @@ import collections
 import datetime
 
 from distiller.utils.TaskLoader import TaskLoader, TaskLoadError
+from distiller.utils.DependencyExplorer import DependencyExplorer
 
 
 class SchedulingBacklog:
@@ -17,8 +18,8 @@ class SchedulingBacklog:
         Only for once instance of the daemon if persistent=False
         Or in the meta db if persistent=True"""
 
-        # TODO: persistent scheduler that simply assures that something is there but doesnt have to be updated
-        # TODO: would only be executed once, or when cask was deleted
+        if TaskLoader.init(scheduling_info.spirit_id).inherits("DefaultPipe"):
+            raise ValueError("Target cannot be a pipe")
 
         if (persistent or scheduling_info.reoccurring) and scheduling_info.age_requirement == 0:
             raise ValueError("Reoccurring target cannot have age requirement 0")
@@ -121,19 +122,13 @@ class SchedulingBacklog:
             age_td = datetime.timedelta(seconds=scheduling_info.age_requirement)
 
         # Perform BFS on dependency tree starting with `scheduling_info`
-        # TODO: this is not pipe compliant, fix that, best would be to use the DependencyExplorer for that
 
-        queue = collections.deque()
-        spirit = TaskLoader.init(scheduling_info.spirit_id)
-
-        queue.append(spirit)
+        spirits = DependencyExplorer.involved_spirits(scheduling_info.spirit_id)
 
         min_cask_dt = datetime.datetime.max
 
-        while queue:
-            curr = queue.popleft()
-
-            cask_dt = self.__get_cask_datetime(curr)
+        for spirit in spirits:
+            cask_dt = self.__get_cask_datetime(spirit.spirit_id())
 
             if cask_dt is None:
                 # There is no cache -> execute
@@ -144,30 +139,25 @@ class SchedulingBacklog:
                 return None
 
             if cask_dt + age_td <= min_date:
-                # Cask does not fulfil age requirement
+                # Cask does not fulfil age requirement -> execute
                 return min_date
 
             min_cask_dt = min(min_cask_dt, cask_dt)
 
-            # Check age requirements for dependencies of curr
-            # by adding it to the queue
-            for dep in curr.requires():
-                queue.append(TaskLoader.init(dep))
-
         pp_date = min_cask_dt + age_td - self.__predict_execution_time(spirit)
 
-        # Don't execute at all if age requirements are already met and this is neither
-        # reoccurring nor would violate age requirement for a scheduled target at the scheduled datetime
+        # Only postpone if it is reoccurring and within the defined date range
+        if pp_date <= min_date or (
+                scheduling_info.reoccurring and
+                (scheduling_info.start_date is None or scheduling_info.start_date <= pp_date) and
+                (scheduling_info.end_date is None or scheduling_info.end_date > pp_date)
+            ):
+            return pp_date
 
-        if pp_date > min_date and not scheduling_info.reoccurring and (
-                scheduling_info.start_date is None or scheduling_info.start_date < pp_date
-        ):
-            return None
+        return None
 
-        return pp_date
-
-    def __get_cask_datetime(self, target_spirit):
-        cask_meta = self.env.meta.get_cask(target_spirit.spirit_id())
+    def __get_cask_datetime(self, spirit_id):
+        cask_meta = self.env.meta.get_cask(spirit_id)
 
         if cask_meta is None:
             return None

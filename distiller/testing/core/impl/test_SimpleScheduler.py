@@ -166,10 +166,9 @@ class TestSimpleScheduler(unittest.TestCase):
         self.assertEqual(None, self.scheduler.run_next())
 
     def test_postponing(self):
-        # Test if postponing keeps target because at moment of start date it won't be satisfied any more
-
         now = datetime.datetime.now()
 
+        # Test if postponing keeps target because at moment of start date it won't be satisfied any more
         self.scheduler.add_target(
             self.t1,
             options={"start_date": now + datetime.timedelta(seconds=10), "age_requirement": 5}
@@ -184,6 +183,36 @@ class TestSimpleScheduler(unittest.TestCase):
         self.scheduler.finish_spirit(transaction["transaction_id"], finish_state=FinishState.SUCCESS)
 
         with mock_datetime_now(now + datetime.timedelta(seconds=11), datetime):
+            transaction = self.scheduler.run_next()
+            self.assertEqual(self.t1, transaction["spirit_id"])
+            self.scheduler.finish_spirit(transaction["transaction_id"], finish_state=FinishState.SUCCESS)
+
+    def test_postponing_pipe(self):
+        now = datetime.datetime.now()
+
+        # Test postponing with pipe in between
+        self.scheduler.add_target(
+            self.t4,
+            options={"reoccurring": True, "age_requirement": 5}
+        )
+
+        with mock_datetime_now(now + datetime.timedelta(seconds=4), datetime):
+            transaction = self.scheduler.run_next()
+            self.assertEqual(self.t1, transaction["spirit_id"])
+            self.scheduler.finish_spirit(transaction["transaction_id"], finish_state=FinishState.SUCCESS)
+
+            transaction = self.scheduler.run_next()
+            self.assertEqual(self.t2, transaction["spirit_id"])
+            self.scheduler.finish_spirit(transaction["transaction_id"], finish_state=FinishState.SUCCESS)
+
+            transaction = self.scheduler.run_next()
+            self.assertEqual(self.t4, transaction["spirit_id"])
+            self.scheduler.finish_spirit(transaction["transaction_id"], finish_state=FinishState.SUCCESS)
+
+        with mock_datetime_now(now + datetime.timedelta(seconds=8), datetime):
+            self.assertEqual(None, self.scheduler.run_next())
+
+        with mock_datetime_now(now + datetime.timedelta(seconds=10), datetime):
             self.assertEqual(self.t1, self.scheduler.run_next()["spirit_id"])
 
     def test_postponing_prune(self):
@@ -204,9 +233,6 @@ class TestSimpleScheduler(unittest.TestCase):
         with mock_datetime_now(now + datetime.timedelta(seconds=11), datetime):
             self.assertEqual(None, self.scheduler.run_next())
 
-
-
-    # TODO test timed Schedules
     # TODO test persistent schedules
 
 

@@ -87,7 +87,6 @@ class GarbageCollector:
 
     def delete_unused(self):
         self.logger.notice("Delete unused requested")
-        # TODO: whitelist non-permanent scheduled ones?
 
         scheduled_spirits = {
             spirit
