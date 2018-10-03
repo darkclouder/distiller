@@ -17,11 +17,11 @@ Daemon and worker can be running on the same host, or different machines.
 If worker runs on different machines either set the configuration values for host and port in the configuration file
 to the host and port of the daemon process/machine, or specify it when starting the worker.
 
-To start the daemon run ``python cli.py daemon --start``.
+To start the daemon run ``python cli.py daemon start``.
 
 `Note: On some systems python refers to Python 2. Use` ``python3 cli.py`` `instead.`
 
-To start the worker run ``python cli.py worker --start [--host HOST] [--port PORT]`` where host and port refer
+To start the worker run ``python cli.py worker start [--host HOST] [--port PORT]`` where host and port refer
 to host and port of the daemon process/machine.
 
 `Note: If you want to run single machine setup but still have parallel execution start multiple worker processes.
@@ -79,12 +79,15 @@ This does not apply to new tasks. They can be added without restarting.*
 Schedule your still
 -------------------
 To schedule the created still run
-``python cli.py spirit add demos.quickstart.hello_world -p '{"text": "Hi!"}' [--host HOST] [--port PORT]``
-on your workstation. This one will write ``Hi!`` to your default data driver, default: a file located at
-``data/demos/quickstart/hello_world.``
+``python cli.py remote spirit add demos.quickstart.hello_world -p '{"text": "Hi!"}' [--host HOST] [--port PORT]``
+on your workstation, where ``--host`` and ``--port`` can be emitted for a local daemon.
+Otherwise, it must specify host and optionally a non-default port to the daemon process.
+This one will write ``Hi!`` to your default data driver, default: a file located at
+``data/casks/demos/quickstart/hello_world.``
 
-If you want to alter the hello world still, restart the daemon and worker before execution and run
-``python cli.py spirit add demos.quickstart.hello_world -p '{"text": "Hi!"}' -o '{"age_requirement": 0}' [--host HOST] [--port PORT]``
+If you want to alter the hello world still and generate new results, run
+``python cli.py remote spirit add demos.quickstart.hello_world -p '{"text": "Hi!"}' --ar 0 [--host HOST] [--port PORT]``
 
+``-ar 0`` is a shortcut for ``-o '{"age_requirement": 0}'``.
 ``-o`` specifies scheduler options, ``"age_requirement": 0`` means:
 data has to be at most 0 seconds old, which enforces a re-execution every time.

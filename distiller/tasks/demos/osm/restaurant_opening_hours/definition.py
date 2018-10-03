@@ -47,16 +47,19 @@ def do(parameters, input_readers, output_writer):
             for website in r:
                 print(website["meta"]["website"])
 
-                clean_text = remove_html(website["text"])
-                hours = [match.group(0) for match in opening_hours.finditer(clean_text)]
+                try:
+                    clean_text = remove_html(website["text"])
+                    hours = [match.group(0) for match in opening_hours.finditer(clean_text)]
 
-                print(hours)
+                    print(hours)
 
-                if len(hours) > 0:
-                    w.write({
-                        "name": website["meta"]["name"],
-                        "opening_hours": ",".join(hours)
-                    })
+                    if len(hours) > 0:
+                        w.write({
+                            "name": website["meta"]["name"],
+                            "opening_hours": ",".join(hours)
+                        })
+                except Exception as e:
+                    print("Parsing error", e)
 
             w.commit()
 
