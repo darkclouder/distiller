@@ -233,6 +233,32 @@ class TestSimpleScheduler(unittest.TestCase):
         with mock_datetime_now(now + datetime.timedelta(seconds=11), datetime):
             self.assertEqual(None, self.scheduler.run_next())
 
+    def test_false_friend_age_requirement(self):
+        # Test if a dependency scheduled with a looser age requirement leads to a violation
+        # of the age requirement with a stricter target.
+
+        now = datetime.datetime.now()
+
+        self.scheduler.add_target(self.t1)
+        transaction = self.scheduler.run_next()
+        self.assertEqual(self.t1, transaction["spirit_id"])
+        self.scheduler.finish_spirit(transaction["transaction_id"], finish_state=FinishState.SUCCESS)
+
+        with mock_datetime_now(now + datetime.timedelta(seconds=15), datetime):
+            self.scheduler.add_target(self.t2, options={"age_requirement": 20})
+            transaction = self.scheduler.run_next()
+            self.assertEqual(self.t2, transaction["spirit_id"])
+            self.scheduler.finish_spirit(transaction["transaction_id"], finish_state=FinishState.SUCCESS)
+
+        with mock_datetime_now(now + datetime.timedelta(seconds=16), datetime):
+            # Now t1 is 16 seconds old, but t2 only 1 second
+            # t1 and t2 actually have to be re-executed because of the age of t1
+            # Will it be?
+            self.scheduler.add_target(self.t4, options={"age_requirement": 2})
+            transaction = self.scheduler.run_next()
+            self.assertEqual(self.t1, transaction["spirit_id"])
+            self.scheduler.finish_spirit(transaction["transaction_id"], finish_state=FinishState.SUCCESS)
+
     # TODO test persistent schedules
 
 
