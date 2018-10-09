@@ -6,6 +6,7 @@ from distiller.utils.Environment import Environment
 from distiller.utils.Configuration import Configuration
 from distiller.core.impl.SimpleScheduler.SimpleScheduler import SimpleScheduler
 from distiller.core.interfaces.Scheduler import FinishState
+from distiller.utils.TaskLoader import TaskLoader
 
 # Source: http://blog.xelnor.net/python-mocking-datetime/
 real_datetime_class = datetime.datetime
@@ -164,6 +165,24 @@ class TestSimpleScheduler(unittest.TestCase):
         self.scheduler.finish_spirit(transaction["transaction_id"], finish_state=FinishState.EXEC_ERROR)
 
         self.assertEqual(None, self.scheduler.run_next())
+
+    def test_lazy_evaluation(self):
+        now = datetime.datetime.now()
+
+        self.scheduler.add_target(self.t1)
+
+        transaction = self.scheduler.run_next()
+        self.assertEqual(self.t1, transaction["spirit_id"])
+        self.scheduler.finish_spirit(transaction["transaction_id"], finish_state=FinishState.SUCCESS)
+
+        with mock_datetime_now(now + datetime.timedelta(seconds=4), datetime):
+            self.scheduler.add_target(self.t1, options={"age_requirement": 6})
+            self.assertEqual(None, self.scheduler.run_next())
+
+        with mock_datetime_now(now + datetime.timedelta(seconds=7), datetime):
+            self.scheduler.add_target(self.t1, options={"age_requirement": 6})
+            transaction = self.scheduler.run_next()
+            self.assertEqual(self.t1, transaction["spirit_id"])
 
     def test_postponing(self):
         now = datetime.datetime.now()

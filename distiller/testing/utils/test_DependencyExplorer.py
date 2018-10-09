@@ -39,11 +39,11 @@ class TestDependencyExplorer(unittest.TestCase):
 
 
     def test_single_branch(self):
-        self.assertEqual(self._get_roots(self.t1), set())
-        self.assertEqual(self._get_roots(self.t2), {self.t2})
-        self.assertEqual(self._get_roots(self.t3), {self.t2})
-        self.assertEqual(self._get_roots(self.t4), {self.t2})
-        self.assertEqual(self._get_roots(self.t5), {self.t2})
+        self.assertEqual(set(), self._get_roots(self.t1))
+        self.assertEqual({self.t2}, self._get_roots(self.t2))
+        self.assertEqual({self.t2}, self._get_roots(self.t3))
+        self.assertEqual({self.t2}, self._get_roots(self.t4))
+        self.assertEqual({self.t2}, self._get_roots(self.t5))
 
     def test_full(self):
         self.assertEqual(self._get_roots(self.t11), {self.t2, self.t6, self.t8})
