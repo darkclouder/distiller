@@ -1,5 +1,4 @@
 import heapq
-import collections
 import datetime
 
 from distiller.utils.TaskLoader import TaskLoader, TaskLoadError
@@ -122,7 +121,6 @@ class SchedulingBacklog:
             age_td = datetime.timedelta(seconds=scheduling_info.age_requirement)
 
         # Perform BFS on dependency tree starting with `scheduling_info`
-
         spirits = DependencyExplorer.involved_spirits(scheduling_info.spirit_id)
 
         min_cask_dt = datetime.datetime.max
@@ -144,7 +142,7 @@ class SchedulingBacklog:
 
             min_cask_dt = min(min_cask_dt, cask_dt)
 
-        pp_date = min_cask_dt + age_td - self.__predict_execution_time(spirit)
+        pp_date = min_cask_dt + age_td - self.__predict_execution_time(scheduling_info)
 
         # Only postpone if it is reoccurring and within the defined date range
         if pp_date <= min_date or (

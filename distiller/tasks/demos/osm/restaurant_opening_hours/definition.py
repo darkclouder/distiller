@@ -36,9 +36,10 @@ class Still(DefaultStill):
 
 def do(parameters, input_readers, output_writer):
     opening_hours = re.compile(
-        "(mon?(tag)?|die?(nstag)?|mit?(twoch)?|don?(nerstag)?|fre?(itag)?|sam?(stag)?|son?(ntag)?)"
-        "((\s|\W)*(mon?(tag)?|die?(nstag)?|mit?(twoch)?|don?(nerstag)?|fre?(itag)?|sam?(stag)?|son?(ntag)?))?"
-        "(\s|\W)*[0-9]{1,2}((\s|\W)*[:-](\s|\W)*[0-9]{2})(\s*uhr)?",
+        "((mon?(tag)?|die?(nstag)?|mit?(twoch)?|don?(nerstag)?|fre?(itag)?|sam?(stag)?|son?(ntag)?)(\s|\W)*)+"
+        "[0-9]{1,2}((\s|\W)*([:.](\s|\W)*[0-9]{2}))?"
+        "((\s|\W)*[0-9]{1,2}((\s|\W)*([:.](\s|\W)*[0-9]{2}))?)?"
+        "(\s*uhr)?",
         re.IGNORECASE
     )
 

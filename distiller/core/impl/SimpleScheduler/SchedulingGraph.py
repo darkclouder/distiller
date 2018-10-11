@@ -32,22 +32,25 @@ class SchedulingGraph:
         # Build execution graph and prune from the leaves all spirits where
         # a results exists and the age requirements are still met
 
-        def prune_fulfilled(spirit):
+        def enforce_expired(spirit):
             cask_dt = self.__get_cask_datetime(spirit)
 
-            return not TaskLoader.spirit_is_pipe(spirit) and cask_dt is not None and (
-                    scheduling_info.age_requirement is None or
-                    cask_dt + datetime.timedelta(seconds=scheduling_info.age_requirement) >= now
+            return not TaskLoader.spirit_is_pipe(spirit) and (
+                cask_dt is None or (
+                    scheduling_info.age_requirement is not None and
+                    cask_dt + datetime.timedelta(seconds=scheduling_info.age_requirement) < now
+                )
             )
 
         roots = DependencyExplorer.build_graph(
             scheduling_info.spirit_id,
-            prune_func=prune_fulfilled
+            enforce_func=enforce_expired
         )
 
-        # Add (reduced) execution branch to list of branches
-        self.branches.append(SchedulingBranch(scheduling_info, roots))
-        self.__sort_branches()
+        if len(roots) > 0:
+            # Add (reduced) execution branch to list of branches
+            self.branches.append(SchedulingBranch(scheduling_info, roots))
+            self.__sort_branches()
 
     def __predict_execution_time(self, spirit):
         """Returns a timedelta for the predicted execution time """
