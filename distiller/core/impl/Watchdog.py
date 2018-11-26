@@ -41,7 +41,10 @@ class Watchdog:
 
     def remove(self, transaction_id):
         with self.lock:
-            self.queue.remove(transaction_id)
+            self.__remove(transaction_id)
+
+    def __remove(self, transaction_id):
+        self.queue.remove(transaction_id)
 
     def __run_thread(self):
         timeout = timedelta(seconds=self.env.config.get("watchdog.timeout"))
@@ -60,9 +63,9 @@ class Watchdog:
                         next_timeout = item.value
                         break
 
-            # This is done after the loop of the queue to not interfere with the iteration
-            for transaction_id in remove_ids:
-                self.remove(transaction_id)
+                # This is done after the loop of the queue to not interfere with the iteration
+                for transaction_id in remove_ids:
+                    self.__remove(transaction_id)
 
             # TODO: interrupt this sleep when stopped running somehow (maybe just kill thread)
             if next_timeout is None:
